@@ -4,30 +4,31 @@
     <title>Beat Ball Mobile</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
-        body {
+        * {
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
+        }
+        body {
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
             background: #333;
             overflow: hidden;
-            touch-action: none; /* Zapobiega domyślnemu przewijaniu */
+            touch-action: none;
         }
         #gameCanvas {
-            border: 2px solid black;
             background: #f0f0f0;
-            max-width: 100vw;
-            max-height: 100vh;
+            border: 2px solid black;
         }
         #score {
             position: absolute;
-            top: 10px;
-            left: 10px;
+            top: 5px;
+            left: 5px;
             color: white;
             font-family: Arial, sans-serif;
-            font-size: 20px;
+            font-size: 16px;
             z-index: 10;
         }
     </style>
@@ -39,74 +40,56 @@
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-        const scoreDisplay = document.getElementById('score');
+        const scoreElem = document.getElementById('score');
 
         // Ustawienie rozmiaru canvas
         function resizeCanvas() {
-            canvas.width = Math.min(800, window.innerWidth);
-            canvas.height = Math.min(600, window.innerHeight);
-            
-            // Przeskalowanie obiektów gry
-            ball.radius = canvas.width * 0.015;
-            paddle.width = canvas.width * 0.15;
-            paddle.height = canvas.height * 0.015;
-            brick.width = canvas.width * 0.11;
-            brick.height = canvas.height * 0.03;
-            brick.padding = canvas.width * 0.012;
-            brick.offsetLeft = canvas.width * 0.03;
-            brick.offsetTop = canvas.height * 0.05;
-            
-            // Reset pozycji początkowych
-            ball.x = canvas.width/2;
-            ball.y = canvas.height-30;
-            paddle.x = (canvas.width-paddle.width)/2;
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
         }
-        window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
 
-        // Game objects
+        // Obiekty gry z proporcjonalnymi wymiarami
         const ball = {
-            x: canvas.width/2,
-            y: canvas.height-30,
-            radius: 10,
-            dx: 4,
-            dy: -4
+            x: window.innerWidth/2,
+            y: window.innerHeight-50,
+            radius: window.innerWidth * 0.02,
+            dx: 3,
+            dy: -3
         };
 
         const paddle = {
-            width: 100,
-            height: 10,
-            x: (canvas.width-100)/2,
+            width: window.innerWidth * 0.2,
+            height: window.innerHeight * 0.02,
+            x: (window.innerWidth * 0.4),
             speed: 7
         };
 
         const brick = {
-            width: 80,
-            height: 20,
-            padding: 10,
-            offsetTop: 30,
-            offsetLeft: 30
+            width: window.innerWidth * 0.1,
+            height: window.innerHeight * 0.03,
+            padding: window.innerWidth * 0.01,
+            offsetTop: window.innerHeight * 0.05,
+            offsetLeft: window.innerWidth * 0.02
         };
 
-        // Game variables
+        // Zmienne gry
         let score = 0;
-        let rightPressed = false;
-        let leftPressed = false;
+        let touchX = null;
         const brickRowCount = 3;
-        const brickColumnCount = 9;
+        const brickColumnCount = Math.floor(window.innerWidth / (brick.width + brick.padding));
         const bricks = [];
 
-        // Create bricks
-        for(let c=0; c<brickColumnCount; c++) {
+        // Tworzenie cegieł
+        for(let c = 0; c < brickColumnCount; c++) {
             bricks[c] = [];
-            for(let r=0; r<brickRowCount; r++) {
+            for(let r = 0; r < brickRowCount; r++) {
                 bricks[c][r] = { x: 0, y: 0, status: 1 };
             }
         }
 
-        // Touch controls
-        let touchX = null;
-        
+        // Obsługa dotyku
         canvas.addEventListener('touchstart', (e) => {
             e.preventDefault();
             touchX = e.touches[0].clientX;
@@ -115,15 +98,12 @@
         canvas.addEventListener('touchmove', (e) => {
             e.preventDefault();
             if(touchX !== null) {
-                const newTouchX = e.touches[0].clientX;
-                const diff = newTouchX - touchX;
+                const newX = e.touches[0].clientX;
+                const diff = newX - touchX;
                 paddle.x += diff;
-                touchX = newTouchX;
-                
-                // Ograniczenie ruchu paletki
+                touchX = newX;
                 if(paddle.x < 0) paddle.x = 0;
-                if(paddle.x + paddle.width > canvas.width) 
-                    paddle.x = canvas.width - paddle.width;
+                if(paddle.x + paddle.width > canvas.width) paddle.x = canvas.width - paddle.width;
             }
         });
 
@@ -132,35 +112,20 @@
             touchX = null;
         });
 
-        // Keyboard controls (dla kompatybilności)
-        document.addEventListener('keydown', keyDownHandler);
-        document.addEventListener('keyup', keyUpHandler);
-
-        function keyDownHandler(e) {
-            if(e.key == 'Right' || e.key == 'ArrowRight') rightPressed = true;
-            else if(e.key == 'Left' || e.key == 'ArrowLeft') leftPressed = true;
-        }
-
-        function keyUpHandler(e) {
-            if(e.key == 'Right' || e.key == 'ArrowRight') rightPressed = false;
-            else if(e.key == 'Left' || e.key == 'ArrowLeft') leftPressed = false;
-        }
-
-        // Collision detection
+        // Detekcja kolizji
         function collisionDetection() {
-            for(let c=0; c<brickColumnCount; c++) {
-                for(let r=0; r<brickRowCount; r++) {
+            for(let c = 0; c < brickColumnCount; c++) {
+                for(let r = 0; r < brickRowCount; r++) {
                     const b = bricks[c][r];
-                    if(b.status == 1) {
-                        if(ball.x > b.x && ball.x < b.x+brick.width && 
-                           ball.y > b.y && ball.y < b.y+brick.height) {
+                    if(b.status === 1) {
+                        if(ball.x > b.x && ball.x < b.x + brick.width && 
+                           ball.y > b.y && ball.y < b.y + brick.height) {
                             ball.dy = -ball.dy;
                             b.status = 0;
                             score += 10;
-                            scoreDisplay.textContent = `Score: ${score}`;
-                            
-                            if(score == brickRowCount * brickColumnCount * 10) {
-                                alert('Congratulations! You won!');
+                            scoreElem.textContent = `Score: ${score}`;
+                            if(score === brickRowCount * brickColumnCount * 10) {
+                                alert('You Win!');
                                 document.location.reload();
                             }
                         }
@@ -169,7 +134,7 @@
             }
         }
 
-        // Draw functions
+        // Rysowanie
         function drawBall() {
             ctx.beginPath();
             ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI*2);
@@ -180,19 +145,18 @@
 
         function drawPaddle() {
             ctx.beginPath();
-            ctx.rect(paddle.x, canvas.height-paddle.height, 
-                    paddle.width, paddle.height);
+            ctx.rect(paddle.x, canvas.height - paddle.height, paddle.width, paddle.height);
             ctx.fillStyle = '#0095DD';
             ctx.fill();
             ctx.closePath();
         }
 
         function drawBricks() {
-            for(let c=0; c<brickColumnCount; c++) {
-                for(let r=0; r<brickRowCount; r++) {
-                    if(bricks[c][r].status == 1) {
-                        const brickX = c*(brick.width+brick.padding)+brick.offsetLeft;
-                        const brickY = r*(brick.height+brick.padding)+brick.offsetTop;
+            for(let c = 0; c < brickColumnCount; c++) {
+                for(let r = 0; r < brickRowCount; r++) {
+                    if(bricks[c][r].status === 1) {
+                        const brickX = c * (brick.width + brick.padding) + brick.offsetLeft;
+                        const brickY = r * (brick.height + brick.padding) + brick.offsetTop;
                         bricks[c][r].x = brickX;
                         bricks[c][r].y = brickY;
                         ctx.beginPath();
@@ -205,7 +169,7 @@
             }
         }
 
-        // Game loop
+        // Główna pętla gry
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             drawBricks();
@@ -213,30 +177,20 @@
             drawPaddle();
             collisionDetection();
 
-            // Ball movement and collision
-            if(ball.x + ball.dx > canvas.width-ball.radius || 
-               ball.x + ball.dx < ball.radius) {
+            // Ruch piłki i kolizje
+            if(ball.x + ball.dx > canvas.width - ball.radius || ball.x + ball.dx < ball.radius) {
                 ball.dx = -ball.dx;
             }
             if(ball.y + ball.dy < ball.radius) {
                 ball.dy = -ball.dy;
             }
-            else if(ball.y + ball.dy > canvas.height-ball.radius) {
+            else if(ball.y + ball.dy > canvas.height - ball.radius) {
                 if(ball.x > paddle.x && ball.x < paddle.x + paddle.width) {
                     ball.dy = -ball.dy;
-                }
-                else {
+                } else {
                     alert('Game Over! Score: ' + score);
                     document.location.reload();
                 }
-            }
-
-            // Paddle movement (keyboard)
-            if(rightPressed && paddle.x < canvas.width-paddle.width) {
-                paddle.x += paddle.speed;
-            }
-            else if(leftPressed && paddle.x > 0) {
-                paddle.x -= paddle.speed;
             }
 
             ball.x += ball.dx;
@@ -245,7 +199,13 @@
             requestAnimationFrame(draw);
         }
 
-        draw();
+        // Uruchomienie gry
+        try {
+            draw();
+        } catch(error) {
+            console.error('Błąd gry:', error);
+            alert('Wystąpił błąd przy uruchamianiu gry');
+        }
     </script>
 </body>
 </html>
