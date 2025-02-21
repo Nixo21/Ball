@@ -24,7 +24,7 @@
             border: 2px solid black;
             transition: background 0.3s, border-color 0.3s;
         }
-        #score, #level {
+        #score, #level, #paddleTimer {
             position: absolute;
             color: white;
             font-family: Arial, sans-serif;
@@ -42,6 +42,11 @@
             top: 1vh;
             right: 1vw;
             transform: translateX(0);
+        }
+        #paddleTimer {
+            top: 6vh;
+            right: 1vw;
+            display: none;
         }
         #pauseBtn {
             position: absolute;
@@ -107,7 +112,8 @@
             border-color: #fff;
         }
         .dark-theme #score,
-        .dark-theme #level {
+        .dark-theme #level,
+        .dark-theme #paddleTimer {
             color: #fff;
             background: rgba(255, 255, 255, 0.2);
         }
@@ -129,6 +135,7 @@
 <body>
     <div id="score">Score: 0</div>
     <div id="level">Level: 1</div>
+    <div id="paddleTimer">Paddle: 0s</div>
     <button id="pauseBtn">Pause</button>
     <div id="pauseMenu">
         <h2>Paused</h2>
@@ -148,6 +155,7 @@
         const ctx = canvas.getContext('2d');
         const scoreElem = document.getElementById('score');
         const levelElem = document.getElementById('level');
+        const paddleTimerElem = document.getElementById('paddleTimer');
         const pauseBtn = document.getElementById('pauseBtn');
         const pauseMenu = document.getElementById('pauseMenu');
         const resumeBtn = document.getElementById('resumeBtn');
@@ -179,8 +187,7 @@
             x: (window.innerWidth * 0.4),
             y: window.innerHeight * 0.9,
             speed: 7,
-            baseWidth: window.innerWidth * 0.2,
-            enlargedUntil: 0
+            defaultWidth: window.innerWidth * 0.2
         };
 
         const brickBase = {
@@ -201,6 +208,7 @@
         let totalBricks = 0;
         let isPaused = false;
         let animationFrameId = null;
+        let paddleTimer = 0;
         let lastTime = performance.now();
 
         // Funkcja inicjalizacji poziomu z wyśrodkowaniem bloków
@@ -237,15 +245,6 @@
             return brick;
         }
         let brick = initializeLevel();
-
-        // Funkcja powiększania paletki
-        function enlargePaddle() {
-            if (paddle.enlargedUntil === 0) {
-                const duration = Math.random() * (50 - 20) + 20; // Losowy czas od 20 do 50 sekund
-                paddle.width = paddle.baseWidth * 2;
-                paddle.enlargedUntil = performance.now() + duration * 1000;
-            }
-        }
 
         // Zapisywanie i wczytywanie motywu
         function loadTheme() {
@@ -289,8 +288,9 @@
                 score: score,
                 level: level,
                 balls: balls,
-                paddle: { x: paddle.x, enlargedUntil: paddle.enlargedUntil },
-                bricks: bricks
+                paddle: { x: paddle.x, width: paddle.width },
+                bricks: bricks,
+                paddleTimer: paddleTimer
             };
             localStorage.setItem('beatBallSave', JSON.stringify(gameState));
             alert('Game Saved!');
@@ -305,16 +305,13 @@
                 level = gameState.level;
                 balls = gameState.balls;
                 paddle.x = gameState.paddle.x;
-                paddle.enlargedUntil = gameState.paddle.enlargedUntil || 0;
-                if (paddle.enlargedUntil > performance.now()) {
-                    paddle.width = paddle.baseWidth * 2;
-                } else {
-                    paddle.width = paddle.baseWidth;
-                }
+                paddle.width = gameState.paddle.width;
                 bricks = gameState.bricks;
+                paddleTimer = gameState.paddleTimer;
                 brick = initializeLevel();
                 scoreElem.textContent = `Score: ${score}`;
                 levelElem.textContent = `Level: ${level}`;
+                updatePaddleTimerDisplay();
                 alert('Game Loaded!');
             } else {
                 alert('No saved game found!');
@@ -333,11 +330,12 @@
                 dy: -3
             }];
             paddle.x = window.innerWidth * 0.4;
-            paddle.width = paddle.baseWidth;
-            paddle.enlargedUntil = 0;
+            paddle.width = paddle.defaultWidth;
+            paddleTimer = 0;
             brick = initializeLevel();
             scoreElem.textContent = `Score: ${score}`;
             levelElem.textContent = `Level: ${level}`;
+            updatePaddleTimerDisplay();
         }
 
         // Obsługa pauzy
@@ -390,12 +388,20 @@
             touchX = null;
         });
 
-        // Dodawanie nowych piłek, podwojenie i powiększenie paletki
+        // Aktualizacja timera paletki
+        function updatePaddleTimerDisplay() {
+            if (paddleTimer > 0) {
+                paddleTimerElem.style.display = 'block';
+                paddleTimerElem.textContent = `Paddle: ${Math.ceil(paddleTimer)}s`;
+            } else {
+                paddleTimerElem.style.display = 'none';
+            }
+        }
+
+        // Dodawanie nowych piłek i efektów
         function addExtraBalls(brickX, brickY) {
             const rand = Math.random();
-            if (rand < 0.04) { // 4% szans na powiększenie paletki
-                enlargePaddle();
-            } else if (rand < 0.045) { // 0.5% szans na 3 kulki
+            if (rand < 0.005) { // 0.5% szans na 3 kulki
                 for(let i = 0; i < 3; i++) {
                     balls.push({
                         x: brickX + brick.width/2,
@@ -405,7 +411,7 @@
                         dy: 3 * (1 + level * 0.1)
                     });
                 }
-            } else if (rand < 0.0451) { // 0.01% szans na podwojenie wszystkich kulek
+            } else if (rand < 0.0051) { // 0.01% szans na podwojenie
                 const currentBalls = [...balls];
                 currentBalls.forEach(ball => {
                     balls.push({
@@ -416,6 +422,10 @@
                         dy: ball.dy
                     });
                 });
+            } else if (rand < 0.01) { // 0.5% szans na powiększenie paletki
+                paddle.width = paddle.defaultWidth * 1.5;
+                paddleTimer = 10 + Math.random() * 10; // 10-20 sekund
+                updatePaddleTimerDisplay();
             }
         }
 
@@ -457,7 +467,7 @@
             }
         }
 
-        // Rysowanie z dynamicznymi kolorami
+        // Rysowanie
         function drawBall(ball) {
             ctx.beginPath();
             ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI*2);
@@ -492,19 +502,13 @@
             }
         }
 
-        // Główna pętla gry z zarządzaniem czasem powiększenia
-        function draw(timestamp) {
+        // Główna pętla gry
+        function draw() {
             if (isPaused) return;
 
-            const currentTime = timestamp || performance.now();
-            const deltaTime = (currentTime - lastTime) / 1000;
+            const currentTime = performance.now();
+            const deltaTime = (currentTime - lastTime) / 1000; // w sekundach
             lastTime = currentTime;
-
-            // Sprawdzanie czasu powiększenia paletki
-            if (paddle.enlargedUntil > 0 && currentTime > paddle.enlargedUntil) {
-                paddle.width = paddle.baseWidth;
-                paddle.enlargedUntil = 0;
-            }
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             drawBricks();
@@ -512,6 +516,17 @@
             drawPaddle();
             collisionDetection();
 
+            // Aktualizacja timera paletki
+            if (paddleTimer > 0) {
+                paddleTimer -= deltaTime;
+                if (paddleTimer <= 0) {
+                    paddleTimer = 0;
+                    paddle.width = paddle.defaultWidth;
+                }
+                updatePaddleTimerDisplay();
+            }
+
+            // Ruch piłek i kolizje
             balls = balls.filter(ball => {
                 if(ball.x + ball.dx > canvas.width - ball.radius || ball.x + ball.dx < ball.radius) {
                     ball.dx = -ball.dx;
@@ -546,6 +561,7 @@
 
         // Uruchomienie gry
         try {
+            lastTime = performance.now();
             draw();
         } catch(error) {
             console.error('Błąd gry:', error);
