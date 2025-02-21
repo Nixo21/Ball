@@ -136,7 +136,7 @@
         function initializeLevel() {
             bricks = [];
             brickRowCount = 3 + level;
-            const scaleFactor = Math.max(0.3, 1 - (level * 0.05)); // Minimum 30% oryginalnego rozmiaru
+            const scaleFactor = Math.max(0.3, 1 - (level * 0.05));
             const brick = {
                 width: brickBase.width * scaleFactor,
                 height: brickBase.height * scaleFactor,
@@ -144,7 +144,6 @@
                 offsetTop: brickBase.offsetTop,
                 offsetLeft: brickBase.offsetLeft
             };
-            // Dopasowanie liczby kolumn tak, by nie wychodziły poza ekran
             brickColumnCount = Math.floor((window.innerWidth - brick.offsetLeft * 2) / (brick.width + brick.padding));
 
             balls.forEach(ball => {
@@ -266,7 +265,7 @@
         // Dodawanie nowych piłek i podwojenie
         function addExtraBalls(brickX, brickY) {
             const rand = Math.random();
-            if (rand < 0.05) { // 5% szans na 3 kulki
+            if (rand < 0.005) { // 0.5% szans na 3 kulki
                 for(let i = 0; i < 3; i++) {
                     balls.push({
                         x: brickX + brick.width/2,
@@ -276,14 +275,14 @@
                         dy: 3 * (1 + level * 0.1)
                     });
                 }
-            } else if (rand < 0.06) { // 1% szans na podwojenie wszystkich kulek
+            } else if (rand < 0.0051) { // 0.01% szans na podwojenie wszystkich kulek
                 const currentBalls = [...balls];
                 currentBalls.forEach(ball => {
                     balls.push({
                         x: ball.x,
                         y: ball.y,
                         radius: ball.radius,
-                        dx: ball.dx * -1, // Odwrócona prędkość dla różnorodności
+                        dx: ball.dx * -1,
                         dy: ball.dy
                     });
                 });
