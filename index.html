@@ -76,6 +76,11 @@
             font-size: 3vw;
             cursor: pointer;
         }
+        /* Dodatkowe style dla jasnego trybu */
+        .light-mode {
+            background: rgba(255, 255, 255, 0.9) !important;
+            color: black !important;
+        }
     </style>
 </head>
 <body>
@@ -88,6 +93,8 @@
         <button id="saveBtn">Save Game</button>
         <button id="loadBtn">Load Game</button>
         <button id="newGameBtn">New Game</button>
+        <button id="darkModeBtn">Dark Mode</button>
+        <button id="lightModeBtn">Light Mode</button>
     </div>
     <canvas id="gameCanvas"></canvas>
 
@@ -102,6 +109,8 @@
         const saveBtn = document.getElementById('saveBtn');
         const loadBtn = document.getElementById('loadBtn');
         const newGameBtn = document.getElementById('newGameBtn');
+        const darkModeBtn = document.getElementById('darkModeBtn');
+        const lightModeBtn = document.getElementById('lightModeBtn');
 
         // Ustawienie rozmiaru canvas
         function resizeCanvas() {
@@ -245,6 +254,19 @@
             }
         }
 
+        // Obsługa zmiany kolorów menu pauzy
+        function setDarkMode() {
+            pauseMenu.classList.remove('light-mode');
+            pauseMenu.style.background = 'rgba(0, 0, 0, 0.8)';
+            pauseMenu.style.color = 'white';
+        }
+
+        function setLightMode() {
+            pauseMenu.classList.add('light-mode');
+            pauseMenu.style.background = 'rgba(255, 255, 255, 0.9)';
+            pauseMenu.style.color = 'black';
+        }
+
         resumeBtn.addEventListener('click', togglePause);
         saveBtn.addEventListener('click', saveGame);
         loadBtn.addEventListener('click', () => {
@@ -255,6 +277,8 @@
             newGame();
             togglePause();
         });
+        darkModeBtn.addEventListener('click', setDarkMode);
+        lightModeBtn.addEventListener('click', setLightMode);
 
         // Obsługa dotyku
         canvas.addEventListener('touchstart', (e) => {
