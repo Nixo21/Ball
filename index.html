@@ -23,7 +23,7 @@
             border: 2px solid black;
         }
         #score, #level {
-            position: absolute;
+            position: fixed; /* Zmiana na fixed, aby elementy były zawsze widoczne */
             color: white;
             font-family: Arial, sans-serif;
             font-size: 4vw;
@@ -41,7 +41,7 @@
             transform: translateX(0);
         }
         #pauseBtn {
-            position: absolute;
+            position: fixed; /* Zmiana na fixed */
             top: 1vh;
             left: 50%;
             transform: translateX(-50%);
@@ -54,7 +54,7 @@
             border-radius: 5px;
         }
         #pauseMenu {
-            position: absolute;
+            position: fixed; /* Zmiana na fixed */
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
@@ -107,6 +107,16 @@
         function resizeCanvas() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
+            // Aktualizacja pozycji paletki i klocków po zmianie rozmiaru
+            paddle.x = (window.innerWidth * 0.4);
+            paddle.y = window.innerHeight * 0.9;
+            paddle.width = window.innerWidth * 0.2;
+            paddle.height = window.innerHeight * 0.02;
+            brickBase.width = window.innerWidth * 0.1;
+            brickBase.height = window.innerHeight * 0.03;
+            brickBase.padding = window.innerWidth * 0.01;
+            brickBase.offsetTop = window.innerHeight * 0.07;
+            brick = initializeLevel();
         }
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
@@ -164,6 +174,7 @@
             brick.offsetLeft = (window.innerWidth - totalBricksWidth) / 2;
 
             balls.forEach(ball => {
+                ball.radius = window.innerWidth * 0.02;
                 ball.dx *= 1.1;
                 ball.dy *= 1.1;
                 ball.x = window.innerWidth/2;
@@ -379,7 +390,7 @@
             }
         }
 
-        // Główna pętla gry z poprawioną detekcją poniżej paletki
+        // Główna pętla gry z poprawionym znikaniem piłki
         function draw() {
             if (isPaused) return;
 
@@ -403,10 +414,10 @@
                 else if(ball.y + ball.dy > paddle.y - ball.radius) {
                     if(ball.x > paddle.x && ball.x < paddle.x + paddle.width && 
                        ball.y + ball.dy <= paddle.y + paddle.height) {
-                        // Odbicie od paletki tylko jeśli piłka jest nad nią lub na jej poziomie
+                        // Odbicie od paletki
                         ball.dy = -ball.dy;
-                    } else if(ball.y > paddle.y) {
-                        // Piłka poniżej paletki - usunięcie
+                    } else if(ball.y > paddle.y + paddle.height + ball.radius) {
+                        // Piłka poniżej paletki o jej promień - usunięcie
                         return false;
                     }
                 }
