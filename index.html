@@ -256,7 +256,17 @@
         let paddleTimer = 0;
         let lastTime = performance.now();
         let isBasketball = false;
-        let activatedCodes = {};
+        let activatedCodes = JSON.parse(localStorage.getItem('activatedCodes')) || {};
+
+        // Lista wszystkich możliwych kodów
+        const allCodes = {
+            "extraballs": true,
+            "bigpaddle": true,
+            "scoreboost": true,
+            "ba$ketball": true,
+            "MEGABIGWIN": true,
+            "AdMiN": true
+        };
 
         // Funkcja inicjalizacji poziomu
         function initializeLevel() {
@@ -335,16 +345,17 @@
                 paddle: { x: paddle.x, width: paddle.width },
                 bricks: bricks,
                 paddleTimer: paddleTimer,
-                activatedCodes: activatedCodes,
                 isBasketball: isBasketball
             };
             localStorage.setItem('beatBallSave', JSON.stringify(gameState));
+            localStorage.setItem('activatedCodes', JSON.stringify(activatedCodes));
             alert('Game Saved!');
         }
 
         // Wczytywanie gry
         function loadGame() {
             const savedState = localStorage.getItem('beatBallSave');
+            const savedCodes = localStorage.getItem('activatedCodes');
             if (savedState) {
                 const gameState = JSON.parse(savedState);
                 score = gameState.score;
@@ -354,8 +365,8 @@
                 paddle.width = gameState.paddle.width;
                 bricks = gameState.bricks;
                 paddleTimer = gameState.paddleTimer;
-                activatedCodes = gameState.activatedCodes || {};
                 isBasketball = gameState.isBasketball || false;
+                activatedCodes = savedCodes ? JSON.parse(savedCodes) : activatedCodes;
                 brick = initializeLevel();
                 scoreElem.textContent = `Score: ${score}`;
                 levelElem.textContent = `Level: ${level}`;
@@ -386,58 +397,70 @@
             scoreElem.textContent = `Score: ${score}`;
             levelElem.textContent = `Level: ${level}`;
             updatePaddleTimerDisplay();
+            localStorage.setItem('activatedCodes', JSON.stringify(activatedCodes));
         }
 
         // Obsługa kodów
         function redeemCode() {
             const code = codeInput.value.trim();
             let success = false;
-            switch(code) {
-                case "extraballs":
-                    balls.push({
-                        x: paddle.x + paddle.width/2,
-                        y: paddle.y - 20,
-                        radius: window.innerWidth * 0.02,
-                        dx: 3,
-                        dy: -3
-                    });
-                    alert("Extra ball added!");
-                    break;
-                case "bigpaddle":
-                    paddle.width = paddle.defaultWidth * 2;
-                    paddleTimer = 30;
-                    updatePaddleTimerDisplay();
-                    alert("Paddle enlarged for 30 seconds!");
-                    break;
-                case "scoreboost":
-                    score += 100;
-                    scoreElem.textContent = `Score: ${score}`;
-                    alert("Score boosted by 100!");
-                    break;
-                case "ba$ketball":
-                    activatedCodes["ba$ketball"] = true;
-                    isBasketball = true;
-                    updateCodesMenu();
-                    alert("Basketball mode activated!");
-                    success = true;
-                    break;
-                case "MEGABIGWIN":
-                    activatedCodes["MEGABIGWIN"] = true;
-                    level = 25;
-                    brick = initializeLevel();
-                    levelElem.textContent = `Level: ${level}`;
-                    updateCodesMenu();
-                    alert("Level set to 25!");
-                    success = true;
-                    break;
-                default:
-                    alert("Invalid code!");
+
+            if (code === "AdMiN") {
+                activatedCodes = { ...allCodes };
+                activatedCodes["AdMiN"] = false;
+                isBasketball = true;
+                level = 25;
+                brick = initializeLevel();
+                levelElem.textContent = `Level: ${level}`;
+                updateCodesMenu();
+                alert("All codes unlocked!");
+                success = true;
+            } else {
+                switch(code) {
+                    case "extraballs":
+                        balls.push({
+                            x: paddle.x + paddle.width/2,
+                            y: paddle.y - 20,
+                            radius: window.innerWidth * 0.02,
+                            dx: 3,
+                            dy: -3
+                        });
+                        alert("Extra ball added!");
+                        break;
+                    case "bigpaddle":
+                        paddle.width = paddle.defaultWidth * 2;
+                        paddleTimer = 30;
+                        updatePaddleTimerDisplay();
+                        alert("Paddle enlarged for 30 seconds!");
+                        break;
+                    case "scoreboost":
+                        score += 100;
+                        scoreElem.textContent = `Score: ${score}`;
+                        alert("Score boosted by 100!");
+                        break;
+                    case "ba$ketball":
+                        activatedCodes["ba$ketball"] = true;
+                        isBasketball = true;
+                        updateCodesMenu();
+                        alert("Basketball mode activated!");
+                        success = true;
+                        break;
+                    case "MEGABIGWIN":
+                        activatedCodes["MEGABIGWIN"] = true;
+                        level = 25;
+                        brick = initializeLevel();
+                        levelElem.textContent = `Level: ${level}`;
+                        updateCodesMenu();
+                        alert("Level set to 25!");
+                        success = true;
+                        break;
+                    default:
+                        alert("Invalid code!");
+                }
             }
+
             if (success) {
-                localStorage.setItem('beatBallSave', JSON.stringify({
-                    score, level, balls, paddle: { x: paddle.x, width: paddle.width }, 
-                    bricks, paddleTimer, activatedCodes, isBasketball
-                }));
+                localStorage.setItem('activatedCodes', JSON.stringify(activatedCodes));
             }
             codeInput.value = "";
         }
@@ -446,6 +469,7 @@
         function updateCodesMenu() {
             codesList.innerHTML = "";
             for (const code in activatedCodes) {
+                if (code === "AdMiN") continue;
                 const div = document.createElement('div');
                 const label = document.createElement('span');
                 label.textContent = code;
@@ -461,10 +485,7 @@
                         brick = initializeLevel();
                         levelElem.textContent = `Level: ${level}`;
                     }
-                    localStorage.setItem('beatBallSave', JSON.stringify({
-                        score, level, balls, paddle: { x: paddle.x, width: paddle.width }, 
-                        bricks, paddleTimer, activatedCodes, isBasketball
-                    }));
+                    localStorage.setItem('activatedCodes', JSON.stringify(activatedCodes));
                 };
                 div.appendChild(label);
                 div.appendChild(toggleBtn);
@@ -622,14 +643,14 @@
             ctx.beginPath();
             if (isBasketball) {
                 ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI*2);
-                ctx.fillStyle = '#f28c38'; // Pomarańczowy kolor koszykarski
+                ctx.fillStyle = '#f28c38';
                 ctx.fill();
                 ctx.strokeStyle = '#000';
                 ctx.lineWidth = 2;
-                ctx.stroke(); // Czarna obwódka
+                ctx.stroke();
                 ctx.beginPath();
                 ctx.arc(ball.x, ball.y, ball.radius * 0.8, 0, Math.PI*2);
-                ctx.stroke(); // Wewnętrzne koło
+                ctx.stroke();
             } else {
                 ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI*2);
                 ctx.fillStyle = document.body.classList.contains('dark-theme') ? '#ccc' : '#0095DD';
