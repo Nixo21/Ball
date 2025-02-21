@@ -496,42 +496,39 @@
             codeInput.value = "";
         }
 
-        // Tabela wyników
-        function saveScore(score) {
-            let localScores = JSON.parse(localStorage.getItem('localScores')) || [];
-            localScores.push({ score: score, date: new Date().toISOString() });
-            localScores.sort((a, b) => b.score - a.score);
-            localScores = localScores.slice(0, 10);
-            localStorage.setItem('localScores', JSON.stringify(localScores));
+        // Tabela wyników z Netlify Functions
+        async function saveScore(score) {
+            try {
+                await fetch('/.netlify/functions/save-score', {
+                    method: 'POST',
+                    body: JSON.stringify({ score })
+                });
+            } catch (error) {
+                console.error('Error saving score:', error);
+                alert('Failed to save score');
+            }
         }
 
-        function updateLeaderboard() {
-            leaderboardList.innerHTML = "";
-            let localScores = JSON.parse(localStorage.getItem('localScores')) || [];
-            localScores.sort((a, b) => b.score - a.score);
-
-            // Symulacja globalnego rankingu
-            const globalScores = [
-                { score: 10000, name: "Player1" },
-                { score: 8000, name: "Player2" },
-                { score: 6000, name: "Player3" },
-                { score: 4000, name: "Player4" },
-                { score: 2000, name: "Player5" },
-                ...localScores.map(s => ({ score: s.score, name: "You" }))
-            ].sort((a, b) => b.score - a.score);
-
-            let playerRank = globalScores.findIndex(s => s.name === "You" && s.score === score) + 1;
-            if (playerRank > 999) playerRank = "999+";
-
-            globalScores.slice(0, 10).forEach((entry, index) => {
-                const div = document.createElement('div');
-                div.innerHTML = `<span>${index + 1}. ${entry.name}</span><span>${entry.score}</span>`;
-                leaderboardList.appendChild(div);
-            });
-
-            const rankDiv = document.createElement('div');
-            rankDiv.innerHTML = `<span>Your Rank:</span><span>${playerRank}</span>`;
-            leaderboardList.appendChild(rankDiv);
+        async function updateLeaderboard() {
+            try {
+                const response = await fetch('/.netlify/functions/save-score', {
+                    method: 'POST',
+                    body: JSON.stringify({ score })
+                });
+                const data = await response.json();
+                leaderboardList.innerHTML = "";
+                data.scores.forEach((entry, index) => {
+                    const div = document.createElement('div');
+                    div.innerHTML = `<span>${index + 1}. Player</span><span>${entry.score}</span>`;
+                    leaderboardList.appendChild(div);
+                });
+                const rankDiv = document.createElement('div');
+                rankDiv.innerHTML = `<span>Your Rank:</span><span>${data.rank}</span>`;
+                leaderboardList.appendChild(rankDiv);
+            } catch (error) {
+                console.error('Error fetching leaderboard:', error);
+                leaderboardList.innerHTML = "Failed to load leaderboard";
+            }
         }
 
         // Aktualizacja menu kodów
