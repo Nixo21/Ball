@@ -24,22 +24,32 @@
         }
         #score, #level {
             position: absolute;
-            top: 5px;
             color: white;
             font-family: Arial, sans-serif;
-            font-size: 16px;
+            font-size: 4vw; /* Skalowanie względem szerokości ekranu */
             z-index: 10;
+            padding: 2px 5px;
+            background: rgba(0, 0, 0, 0.5); /* Lekkie tło dla lepszej widoczności */
         }
-        #score { left: 5px; }
-        #level { right: 5px; }
+        #score { 
+            top: 1vh; /* Odległość od góry w procentach wysokości */
+            left: 1vw; /* Odległość od lewej w procentach szerokości */
+        }
+        #level { 
+            top: 1vh; 
+            right: 1vw; 
+        }
         #pauseBtn {
             position: absolute;
-            top: 30px;
-            left: 5px;
-            padding: 5px 10px;
-            font-size: 16px;
+            top: 6vh; /* Przesunięty niżej, aby nie nachodził na score/level */
+            left: 1vw;
+            padding: 1vh 2vw; /* Skalowanie paddingu */
+            font-size: 3vw; /* Skalowalna czcionka */
             cursor: pointer;
             z-index: 10;
+            background: #fff;
+            border: 1px solid #000;
+            border-radius: 5px;
         }
         #pauseMenu {
             position: absolute;
@@ -53,12 +63,15 @@
             z-index: 20;
             color: white;
             text-align: center;
+            width: 80vw; /* Ograniczenie szerokości menu */
+            max-height: 80vh; /* Ograniczenie wysokości */
+            overflow-y: auto; /* Przewijanie w pionie, jeśli za dużo treści */
         }
         #pauseMenu button {
             display: block;
             margin: 10px auto;
-            padding: 5px 10px;
-            font-size: 16px;
+            padding: 1vh 2vw;
+            font-size: 3vw;
             cursor: pointer;
         }
     </style>
@@ -136,7 +149,7 @@
         function initializeLevel() {
             bricks = [];
             brickRowCount = 3 + level;
-            const scaleFactor = Math.max(0.5, 1 - (level * 0.03)); // Minimum 50% rozmiaru, zmniejszanie o 3% na poziom
+            const scaleFactor = Math.max(0.5, 1 - (level * 0.03));
             const brick = {
                 width: brickBase.width * scaleFactor,
                 height: brickBase.height * scaleFactor,
@@ -298,7 +311,6 @@
                     if(b.status === 1) {
                         bricksLeft++;
                         balls.forEach(ball => {
-                            // Sprawdzenie kolizji z uwzględnieniem krawędzi
                             const closestX = Math.max(b.x, Math.min(ball.x, b.x + brick.width));
                             const closestY = Math.max(b.y, Math.min(ball.y, b.y + brick.height));
                             const distanceX = ball.x - closestX;
@@ -306,13 +318,12 @@
                             const distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
 
                             if(distance < ball.radius) {
-                                // Określenie strony kolizji
                                 const dx = ball.x - (b.x + brick.width/2);
                                 const dy = ball.y - (b.y + brick.height/2);
                                 if(Math.abs(dx) > Math.abs(dy)) {
-                                    ball.dx = -ball.dx; // Kolizja boczna
+                                    ball.dx = -ball.dx;
                                 } else {
-                                    ball.dy = -ball.dy; // Kolizja góra/dół
+                                    ball.dy = -ball.dy;
                                 }
                                 b.status = 0;
                                 score += 10;
