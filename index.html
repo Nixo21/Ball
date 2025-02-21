@@ -178,7 +178,9 @@
             height: window.innerHeight * 0.02,
             x: (window.innerWidth * 0.4),
             y: window.innerHeight * 0.9,
-            speed: 7
+            speed: 7,
+            baseWidth: window.innerWidth * 0.2,
+            enlargedUntil: 0
         };
 
         const brickBase = {
@@ -199,6 +201,7 @@
         let totalBricks = 0;
         let isPaused = false;
         let animationFrameId = null;
+        let lastTime = performance.now();
 
         // Funkcja inicjalizacji poziomu z wyśrodkowaniem bloków
         function initializeLevel() {
@@ -235,6 +238,15 @@
         }
         let brick = initializeLevel();
 
+        // Funkcja powiększania paletki
+        function enlargePaddle() {
+            if (paddle.enlargedUntil === 0) {
+                const duration = Math.random() * (50 - 20) + 20; // Losowy czas od 20 do 50 sekund
+                paddle.width = paddle.baseWidth * 2;
+                paddle.enlargedUntil = performance.now() + duration * 1000;
+            }
+        }
+
         // Zapisywanie i wczytywanie motywu
         function loadTheme() {
             const savedTheme = localStorage.getItem('gameTheme');
@@ -254,13 +266,13 @@
         // Aktualizacja kolorów gry
         function updateGameColors(isDark) {
             if (isDark) {
-                ballColor = '#ccc';    // Szara piłka
-                paddleColor = '#fff';  // Biała platforma
-                brickColor = '#888';   // Szare bloki
+                ballColor = '#ccc';
+                paddleColor = '#fff';
+                brickColor = '#888';
             } else {
-                ballColor = '#0095DD'; // Oryginalny niebieski
+                ballColor = '#0095DD';
                 paddleColor = '#0095DD';
-                brickColor = '#DD9500'; // Oryginalny pomarańczowy
+                brickColor = '#DD9500';
             }
         }
 
@@ -268,7 +280,6 @@
         let paddleColor = '#0095DD';
         let brickColor = '#DD9500';
 
-        // Wczytanie zapisanego motywu przy starcie
         loadTheme();
         updateGameColors(document.body.classList.contains('dark-theme'));
 
@@ -278,7 +289,7 @@
                 score: score,
                 level: level,
                 balls: balls,
-                paddle: { x: paddle.x },
+                paddle: { x: paddle.x, enlargedUntil: paddle.enlargedUntil },
                 bricks: bricks
             };
             localStorage.setItem('beatBallSave', JSON.stringify(gameState));
@@ -294,6 +305,12 @@
                 level = gameState.level;
                 balls = gameState.balls;
                 paddle.x = gameState.paddle.x;
+                paddle.enlargedUntil = gameState.paddle.enlargedUntil || 0;
+                if (paddle.enlargedUntil > performance.now()) {
+                    paddle.width = paddle.baseWidth * 2;
+                } else {
+                    paddle.width = paddle.baseWidth;
+                }
                 bricks = gameState.bricks;
                 brick = initializeLevel();
                 scoreElem.textContent = `Score: ${score}`;
@@ -316,6 +333,8 @@
                 dy: -3
             }];
             paddle.x = window.innerWidth * 0.4;
+            paddle.width = paddle.baseWidth;
+            paddle.enlargedUntil = 0;
             brick = initializeLevel();
             scoreElem.textContent = `Score: ${score}`;
             levelElem.textContent = `Level: ${level}`;
@@ -329,6 +348,7 @@
             isPaused = !isPaused;
             pauseMenu.style.display = isPaused ? 'block' : 'none';
             if (!isPaused && animationFrameId === null) {
+                lastTime = performance.now();
                 draw();
             } else if (isPaused) {
                 cancelAnimationFrame(animationFrameId);
@@ -370,10 +390,12 @@
             touchX = null;
         });
 
-        // Dodawanie nowych piłek i podwojenie
+        // Dodawanie nowych piłek, podwojenie i powiększenie paletki
         function addExtraBalls(brickX, brickY) {
             const rand = Math.random();
-            if (rand < 0.005) {
+            if (rand < 0.04) { // 4% szans na powiększenie paletki
+                enlargePaddle();
+            } else if (rand < 0.045) { // 0.5% szans na 3 kulki
                 for(let i = 0; i < 3; i++) {
                     balls.push({
                         x: brickX + brick.width/2,
@@ -383,7 +405,7 @@
                         dy: 3 * (1 + level * 0.1)
                     });
                 }
-            } else if (rand < 0.0051) {
+            } else if (rand < 0.0451) { // 0.01% szans na podwojenie wszystkich kulek
                 const currentBalls = [...balls];
                 currentBalls.forEach(ball => {
                     balls.push({
@@ -470,9 +492,19 @@
             }
         }
 
-        // Główna pętla gry
-        function draw() {
+        // Główna pętla gry z zarządzaniem czasem powiększenia
+        function draw(timestamp) {
             if (isPaused) return;
+
+            const currentTime = timestamp || performance.now();
+            const deltaTime = (currentTime - lastTime) / 1000;
+            lastTime = currentTime;
+
+            // Sprawdzanie czasu powiększenia paletki
+            if (paddle.enlargedUntil > 0 && currentTime > paddle.enlargedUntil) {
+                paddle.width = paddle.baseWidth;
+                paddle.enlargedUntil = 0;
+            }
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             drawBricks();
