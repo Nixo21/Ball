@@ -1,835 +1,188 @@
 <!DOCTYPE html>
-<html>
+<html lang="pl">
 <head>
-    <title>Beat Ball Mobile Levels</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta charset="UTF-8">
+    <title>Beat Ball</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background: #333;
-            overflow: hidden;
-            touch-action: none;
-            transition: background 0.3s;
-        }
-        #gameCanvas {
-            background: #f0f0f0;
-            border: 2px solid black;
-            transition: background 0.3s, border-color 0.3s;
-        }
-        #score, #level, #paddleTimer {
-            position: absolute;
-            color: white;
-            font-family: Arial, sans-serif;
-            font-size: 4vw;
-            z-index: 10;
-            padding: 2px 5px;
-            background: rgba(0, 0, 0, 0.5);
-            transition: color 0.3s, background 0.3s;
-        }
-        #score { 
-            top: 1vh;
-            left: 1vw;
-        }
-        #level { 
-            top: 1vh;
-            right: 1vw;
-            transform: translateX(0);
-        }
-        #paddleTimer {
-            top: 6vh;
-            right: 1vw;
-            display: none;
-        }
-        #pauseBtn {
-            position: absolute;
-            top: 1vh;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 1vh 2vw;
-            font-size: 3vw;
-            cursor: pointer;
-            z-index: 10;
-            background: #fff;
-            border: 1px solid #000;
-            border-radius: 5px;
-            transition: background 0.3s, color 0.3s, border-color 0.3s;
-        }
-        #pauseMenu, #codesMenu, #leaderboardMenu {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.8);
-            padding: 20px;
-            border-radius: 10px;
-            display: none;
-            z-index: 20;
-            color: white;
-            text-align: center;
-            width: 80vw;
-            max-height: 80vh;
-            overflow-y: auto;
-            transition: background 0.3s, color 0.3s;
-        }
-        #pauseMenu button, #codesMenu button, #leaderboardMenu button {
-            display: block;
-            margin: 10px auto;
-            padding: 1vh 2vw;
-            font-size: 3vw;
-            cursor: pointer;
-            transition: background 0.3s, color 0.3s;
-        }
-        .theme-toggle {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            margin: 10px 0;
-        }
-        .theme-toggle label {
-            font-size: 3vw;
-        }
-        .theme-toggle input[type="checkbox"] {
-            width: 40px;
-            height: 20px;
-            cursor: pointer;
-        }
-        .code-input {
-            margin: 10px 0;
-        }
-        #codeInput {
-            padding: 1vh 2vw;
-            font-size: 3vw;
-            width: 60%;
-            border-radius: 5px;
-            border: 1px solid #fff;
-        }
-        #codesList div {
-            margin: 10px 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        #codesList button {
-            display: inline-block;
-            margin: 0 5px;
-            padding: 0.5vh 1vw;
-            font-size: 2.5vw;
-        }
-        #leaderboardList {
-            margin: 10px 0;
-            font-size: 3vw;
-        }
-        #leaderboardList div {
-            display: flex;
-            justify-content: space-between;
-            padding: 5px;
-            border-bottom: 1px solid #fff;
-        }
-
-        /* Styl dla ciemnego motywu */
-        body.dark-theme {
-            background: #1a1a1a;
-        }
-        .dark-theme #gameCanvas {
-            background: #2a2a2a;
-            border-color: #fff;
-        }
-        .dark-theme #score,
-        .dark-theme #level,
-        .dark-theme #paddleTimer {
-            color: #fff;
-            background: rgba(255, 255, 255, 0.2);
-        }
-        .dark-theme #pauseBtn {
-            background: #444;
-            color: #fff;
-            border-color: #fff;
-        }
-        .dark-theme #pauseMenu,
-        .dark-theme #codesMenu,
-        .dark-theme #leaderboardMenu {
-            background: rgba(40, 40, 40, 0.9);
-            color: #fff;
-        }
-        .dark-theme #pauseMenu button,
-        .dark-theme #codesMenu button,
-        .dark-theme #leaderboardMenu button {
-            background: #555;
-            color: #fff;
-        }
-        .dark-theme #codeInput {
-            background: #666;
-            color: #fff;
-            border-color: #fff;
-        }
+        body { margin: 0; font-family: Arial, sans-serif; background: #222; color: white; text-align: center; }
+        canvas { display: none; }
+        #menu, #login-screen { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0, 0, 0, 0.8); padding: 20px; border-radius: 10px; }
+        button { padding: 10px 20px; margin: 5px; background: #444; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #666; }
+        #leaderboardList { margin-top: 20px; }
+        input { padding: 10px; margin: 5px; width: 200px; }
     </style>
 </head>
 <body>
-    <div id="score">Score: 0</div>
-    <div id="level">Level: 1</div>
-    <div id="paddleTimer">Paddle: 0s</div>
-    <button id="pauseBtn">Pause</button>
-    <div id="pauseMenu">
-        <h2>Paused</h2>
-        <button id="resumeBtn">Resume</button>
-        <button id="saveBtn">Save Game</button>
-        <button id="loadBtn">Load Game</button>
-        <button id="newGameBtn">New Game</button>
-        <div class="theme-toggle">
-            <label for="themeSwitch">Dark Theme</label>
-            <input type="checkbox" id="themeSwitch">
-        </div>
-        <div class="code-input">
-            <input type="text" id="codeInput" placeholder="Enter code">
-            <button id="redeemBtn">Redeem</button>
-        </div>
-        <button id="codesBtn">Codes</button>
-        <button id="leaderboardBtn">Leaderboard</button>
+    <div id="login-screen">
+        <h2>Logowanie / Rejestracja</h2>
+        <input type="text" id="nickname" placeholder="Nick" maxlength="15"><br>
+        <input type="password" id="password" placeholder="Hasło"><br>
+        <button onclick="loginOrRegister()">Zaloguj / Zarejestruj</button>
+        <p id="login-message"></p>
     </div>
-    <div id="codesMenu">
-        <h2>Activated Codes</h2>
-        <div id="codesList"></div>
-        <button id="backBtn">Back</button>
+    <div id="menu" style="display: none;">
+        <h1>Beat Ball</h1>
+        <button onclick="startGame()">Start</button><br>
+        <button onclick="showLeaderboard()">Leaderboard</button><br>
+        <button onclick="logout()">Wyloguj</button>
     </div>
-    <div id="leaderboardMenu">
-        <h2>Leaderboard</h2>
-        <div id="leaderboardList"></div>
-        <button id="leaderboardBackBtn">Back</button>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <div id="gameInfo" style="display: none;">
+        <p>Score: <span id="score">0</span></p>
+        <p>Level: <span id="level">1</span></p>
+        <button id="pauseBtn" onclick="togglePause()">Pause</button>
     </div>
-    <canvas id="gameCanvas"></canvas>
-
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-        const scoreElem = document.getElementById('score');
-        const levelElem = document.getElementById('level');
-        const paddleTimerElem = document.getElementById('paddleTimer');
-        const pauseBtn = document.getElementById('pauseBtn');
-        const pauseMenu = document.getElementById('pauseMenu');
-        const codesMenu = document.getElementById('codesMenu');
-        const leaderboardMenu = document.getElementById('leaderboardMenu');
-        const resumeBtn = document.getElementById('resumeBtn');
-        const saveBtn = document.getElementById('saveBtn');
-        const loadBtn = document.getElementById('loadBtn');
-        const newGameBtn = document.getElementById('newGameBtn');
-        const themeSwitch = document.getElementById('themeSwitch');
-        const codeInput = document.getElementById('codeInput');
-        const redeemBtn = document.getElementById('redeemBtn');
-        const codesBtn = document.getElementById('codesBtn');
-        const leaderboardBtn = document.getElementById('leaderboardBtn');
-        const codesList = document.getElementById('codesList');
-        const leaderboardList = document.getElementById('leaderboardList');
-        const backBtn = document.getElementById('backBtn');
-        const leaderboardBackBtn = document.getElementById('leaderboardBackBtn');
+        const menu = document.getElementById('menu');
+        const gameInfo = document.getElementById('gameInfo');
+        const scoreDisplay = document.getElementById('score');
+        const levelDisplay = document.getElementById('level');
+        const loginScreen = document.getElementById('login-screen');
+        const leaderboardList = document.createElement('div');
+        leaderboardList.id = 'leaderboardList';
 
-        // Ustawienie rozmiaru canvas
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        }
-        resizeCanvas();
-        window.addEventListener('resize', resizeCanvas);
+        let score = 0, level = 1, balls = [], paddle = { x: 350, y: 550, width: 100, height: 10 }, isPaused = false, isGameOver = false, user = null;
 
-        // Początkowe ustawienia gry
-        let balls = [{
-            x: window.innerWidth/2,
-            y: window.innerHeight * 0.8,
-            radius: window.innerWidth * 0.02,
-            dx: 3,
-            dy: -3
-        }];
-
-        const paddle = {
-            width: window.innerWidth * 0.2,
-            height: window.innerHeight * 0.02,
-            x: (window.innerWidth * 0.4),
-            y: window.innerHeight * 0.9,
-            speed: 7,
-            defaultWidth: window.innerWidth * 0.2
-        };
-
-        const brickBase = {
-            width: window.innerWidth * 0.1,
-            height: window.innerHeight * 0.03,
-            padding: window.innerWidth * 0.01,
-            offsetTop: window.innerHeight * 0.07,
-            offsetLeft: 0
-        };
-
-        // Zmienne gry
-        let score = 0;
-        let level = 1;
-        let touchX = null;
-        let brickRowCount = 3;
-        let brickColumnCount = 0;
-        let bricks = [];
-        let totalBricks = 0;
-        let isPaused = false;
-        let animationFrameId = null;
-        let paddleTimer = 0;
-        let lastTime = performance.now();
-        let isBasketball = false;
-        let activatedCodes = JSON.parse(localStorage.getItem('activatedCodes')) || {};
-
-        // Lista trwałych kodów
-        const persistentCodes = {
-            "ba$ketball": true,
-            "MEGABIGWIN": true
-        };
-
-        // Lista wszystkich kodów
-        const allCodes = {
-            "extraballs": true,
-            "bigpaddle": true,
-            "scoreboost": true,
-            "ba$ketball": true,
-            "MEGABIGWIN": true,
-            "AdMiN": true
-        };
-
-        // Funkcja inicjalizacji poziomu
-        function initializeLevel() {
-            bricks = [];
-            brickRowCount = 3 + level;
-            const scaleFactor = Math.max(0.5, 1 - (level * 0.03));
-            const brick = {
-                width: brickBase.width * scaleFactor,
-                height: brickBase.height * scaleFactor,
-                padding: brickBase.padding,
-                offsetTop: brickBase.offsetTop,
-                offsetLeft: 0
-            };
-            brickColumnCount = Math.floor(window.innerWidth / (brick.width + brick.padding));
-            const totalBricksWidth = brickColumnCount * (brick.width + brick.padding) - brick.padding;
-            brick.offsetLeft = (window.innerWidth - totalBricksWidth) / 2;
-
-            balls.forEach(ball => {
-                ball.dx *= 1.1;
-                ball.dy *= 1.1;
-                ball.x = window.innerWidth/2;
-                ball.y = window.innerHeight * 0.8;
-            });
-
-            for(let c = 0; c < brickColumnCount; c++) {
-                bricks[c] = [];
-                for(let r = 0; r < brickRowCount; r++) {
-                    bricks[c][r] = { x: 0, y: 0, status: 1 };
-                }
-            }
-            totalBricks = brickRowCount * brickColumnCount;
-            levelElem.textContent = `Level: ${level}`;
-            return brick;
-        }
-        let brick = initializeLevel();
-
-        // Zapisywanie i wczytywanie motywu
-        function loadTheme() {
-            const savedTheme = localStorage.getItem('gameTheme');
-            if (savedTheme === 'dark') {
-                document.body.classList.add('dark-theme');
-                themeSwitch.checked = true;
-            }
-        }
-
-        function toggleTheme() {
-            document.body.classList.toggle('dark-theme');
-            const isDark = document.body.classList.contains('dark-theme');
-            localStorage.setItem('gameTheme', isDark ? 'dark' : 'light');
-            updateGameColors(isDark);
-        }
-
-        // Aktualizacja kolorów gry
-        function updateGameColors(isDark) {
-            if (isDark) {
-                paddleColor = '#fff';
-                brickColor = '#888';
-            } else {
-                paddleColor = '#0095DD';
-                brickColor = '#DD9500';
-            }
-        }
-
-        let paddleColor = '#0095DD';
-        let brickColor = '#DD9500';
-
-        loadTheme();
-        updateGameColors(document.body.classList.contains('dark-theme'));
-
-        // Zapisywanie gry
-        function saveGame() {
-            const gameState = {
-                score: score,
-                level: level,
-                balls: balls,
-                paddle: { x: paddle.x, width: paddle.width },
-                bricks: bricks,
-                paddleTimer: paddleTimer,
-                isBasketball: isBasketball
-            };
-            localStorage.setItem('beatBallSave', JSON.stringify(gameState));
-            localStorage.setItem('activatedCodes', JSON.stringify(activatedCodes));
-            alert('Game Saved!');
-        }
-
-        // Wczytywanie gry
-        function loadGame() {
-            const savedState = localStorage.getItem('beatBallSave');
-            const savedCodes = localStorage.getItem('activatedCodes');
-            if (savedState) {
-                const gameState = JSON.parse(savedState);
-                score = gameState.score;
-                level = gameState.level;
-                balls = gameState.balls;
-                paddle.x = gameState.paddle.x;
-                paddle.width = gameState.paddle.width;
-                bricks = gameState.bricks;
-                paddleTimer = gameState.paddleTimer;
-                isBasketball = gameState.isBasketball || false;
-                activatedCodes = savedCodes ? JSON.parse(savedCodes) : activatedCodes;
-                brick = initializeLevel();
-                scoreElem.textContent = `Score: ${score}`;
-                levelElem.textContent = `Level: ${level}`;
-                updatePaddleTimerDisplay();
-                updateCodesMenu();
-                alert('Game Loaded!');
-            } else {
-                alert('No saved game found!');
-            }
-        }
-
-        // Nowa gra
-        function newGame() {
-            score = 0;
-            level = activatedCodes["MEGABIGWIN"] ? 25 : 1;
-            balls = [{
-                x: window.innerWidth/2,
-                y: window.innerHeight * 0.8,
-                radius: window.innerWidth * 0.02,
-                dx: 3,
-                dy: -3
-            }];
-            paddle.x = window.innerWidth * 0.4;
-            paddle.width = paddle.defaultWidth;
-            paddleTimer = 0;
-            isBasketball = activatedCodes["ba$ketball"] || false;
-            brick = initializeLevel();
-            scoreElem.textContent = `Score: ${score}`;
-            levelElem.textContent = `Level: ${level}`;
-            updatePaddleTimerDisplay();
-            localStorage.setItem('activatedCodes', JSON.stringify(activatedCodes));
-        }
-
-        // Obsługa kodów
-        function redeemCode() {
-            const code = codeInput.value.trim();
-            let success = false;
-
-            if (code === "AdMiN") {
-                activatedCodes = { ...allCodes };
-                activatedCodes["AdMiN"] = false;
-                delete activatedCodes["extraballs"];
-                delete activatedCodes["bigpaddle"];
-                delete activatedCodes["scoreboost"];
-                isBasketball = true;
-                level = 25;
-                brick = initializeLevel();
-                levelElem.textContent = `Level: ${level}`;
-                updateCodesMenu();
-                alert("All persistent codes unlocked!");
-                success = true;
-            } else {
-                switch(code) {
-                    case "extraballs":
-                        balls.push({
-                            x: paddle.x + paddle.width/2,
-                            y: paddle.y - 20,
-                            radius: window.innerWidth * 0.02,
-                            dx: 3,
-                            dy: -3
-                        });
-                        alert("Extra ball added!");
-                        break;
-                    case "bigpaddle":
-                        paddle.width = paddle.defaultWidth * 2;
-                        paddleTimer = 30;
-                        updatePaddleTimerDisplay();
-                        alert("Paddle enlarged for 30 seconds!");
-                        break;
-                    case "scoreboost":
-                        score += 100;
-                        scoreElem.textContent = `Score: ${score}`;
-                        alert("Score boosted by 100!");
-                        break;
-                    case "ba$ketball":
-                        activatedCodes["ba$ketball"] = true;
-                        isBasketball = true;
-                        updateCodesMenu();
-                        alert("Basketball mode activated!");
-                        success = true;
-                        break;
-                    case "MEGABIGWIN":
-                        activatedCodes["MEGABIGWIN"] = true;
-                        level = 25;
-                        brick = initializeLevel();
-                        levelElem.textContent = `Level: ${level}`;
-                        updateCodesMenu();
-                        alert("Level set to 25!");
-                        success = true;
-                        break;
-                    default:
-                        alert("Invalid code!");
-                }
-            }
-
-            if (success) {
-                localStorage.setItem('activatedCodes', JSON.stringify(activatedCodes));
-            }
-            codeInput.value = "";
-        }
-
-        // Tabela wyników
-        function saveScore(score) {
-            let localScores = JSON.parse(localStorage.getItem('localScores')) || [];
-            localScores.push({ score: score, date: new Date().toISOString() });
-            localScores.sort((a, b) => b.score - a.score);
-            localScores = localScores.slice(0, 10);
-            localStorage.setItem('localScores', JSON.stringify(localScores));
-        }
-
-        function updateLeaderboard() {
-            leaderboardList.innerHTML = "";
-            let localScores = JSON.parse(localStorage.getItem('localScores')) || [];
-            localScores.sort((a, b) => b.score - a.score);
-
-            // Symulacja globalnego rankingu
-            const globalScores = [
-                { score: 10000, name: "Player1" },
-                { score: 8000, name: "Player2" },
-                { score: 6000, name: "Player3" },
-                { score: 4000, name: "Player4" },
-                { score: 2000, name: "Player5" },
-                ...localScores.map(s => ({ score: s.score, name: "You" }))
-            ].sort((a, b) => b.score - a.score);
-
-            let playerRank = globalScores.findIndex(s => s.name === "You" && s.score === score) + 1;
-            if (playerRank > 999) playerRank = "999+";
-
-            globalScores.slice(0, 10).forEach((entry, index) => {
-                const div = document.createElement('div');
-                div.innerHTML = `<span>${index + 1}. ${entry.name}</span><span>${entry.score}</span>`;
-                leaderboardList.appendChild(div);
-            });
-
-            const rankDiv = document.createElement('div');
-            rankDiv.innerHTML = `<span>Your Rank:</span><span>${playerRank}</span>`;
-            leaderboardList.appendChild(rankDiv);
-        }
-
-        // Aktualizacja menu kodów
-        function updateCodesMenu() {
-            codesList.innerHTML = "";
-            for (const code in activatedCodes) {
-                if (code === "AdMiN" || !persistentCodes[code]) continue;
-                const div = document.createElement('div');
-                const label = document.createElement('span');
-                label.textContent = code;
-                const toggleBtn = document.createElement('button');
-                toggleBtn.textContent = activatedCodes[code] ? "Disable" : "Enable";
-                toggleBtn.onclick = () => {
-                    activatedCodes[code] = !activatedCodes[code];
-                    toggleBtn.textContent = activatedCodes[code] ? "Disable" : "Enable";
-                    if (code === "ba$ketball") {
-                        isBasketball = activatedCodes[code];
-                    } else if (code === "MEGABIGWIN" && !activatedCodes[code]) {
-                        level = 1;
-                        brick = initializeLevel();
-                        levelElem.textContent = `Level: ${level}`;
+        function loginOrRegister() {
+            const nickname = document.getElementById('nickname').value.trim();
+            const password = document.getElementById('password').value;
+            if (nickname && password) {
+                const users = JSON.parse(localStorage.getItem('users') || '{}');
+                if (users[nickname]) {
+                    if (users[nickname].password === password) {
+                        user = nickname;
+                        document.getElementById('login-message').textContent = 'Zalogowano!';
+                        setTimeout(() => {
+                            loginScreen.style.display = 'none';
+                            menu.style.display = 'block';
+                        }, 500);
+                    } else {
+                        document.getElementById('login-message').textContent = 'Błędne hasło!';
                     }
-                    localStorage.setItem('activatedCodes', JSON.stringify(activatedCodes));
-                };
-                div.appendChild(label);
-                div.appendChild(toggleBtn);
-                codesList.appendChild(div);
+                } else {
+                    users[nickname] = { password, highScore: 0 };
+                    localStorage.setItem('users', JSON.stringify(users));
+                    user = nickname;
+                    document.getElementById('login-message').textContent = 'Zarejestrowano i zalogowano!';
+                    setTimeout(() => {
+                        loginScreen.style.display = 'none';
+                        menu.style.display = 'block';
+                    }, 500);
+                }
+            } else {
+                document.getElementById('login-message').textContent = 'Wprowadź nick i hasło!';
             }
         }
 
-        // Przełączanie menu
-        function showCodesMenu() {
-            pauseMenu.style.display = 'none';
-            codesMenu.style.display = 'block';
-            leaderboardMenu.style.display = 'none';
-            updateCodesMenu();
+        function logout() {
+            user = null;
+            menu.style.display = 'none';
+            loginScreen.style.display = 'block';
+            document.getElementById('nickname').value = '';
+            document.getElementById('password').value = '';
+            document.getElementById('login-message').textContent = '';
         }
 
-        function showLeaderboardMenu() {
-            pauseMenu.style.display = 'none';
-            codesMenu.style.display = 'none';
-            leaderboardMenu.style.display = 'block';
-            updateLeaderboard();
+        function startGame() {
+            menu.style.display = 'none';
+            canvas.style.display = 'block';
+            gameInfo.style.display = 'block';
+            score = 0;
+            level = 1;
+            balls = [{ x: 400, y: 300, dx: 4, dy: -4, radius: 10 }];
+            isGameOver = false;
+            isPaused = false;
+            gameLoop();
         }
-
-        function showPauseMenu() {
-            codesMenu.style.display = 'none';
-            leaderboardMenu.style.display = 'none';
-            pauseMenu.style.display = 'block';
-        }
-
-        // Obsługa pauzy i zdarzeń
-        pauseBtn.addEventListener('click', togglePause);
-        themeSwitch.addEventListener('change', toggleTheme);
-        redeemBtn.addEventListener('click', redeemCode);
-        codesBtn.addEventListener('click', showCodesMenu);
-        leaderboardBtn.addEventListener('click', showLeaderboardMenu);
-        backBtn.addEventListener('click', showPauseMenu);
-        leaderboardBackBtn.addEventListener('click', showPauseMenu);
 
         function togglePause() {
             isPaused = !isPaused;
-            pauseMenu.style.display = isPaused ? 'block' : 'none';
-            codesMenu.style.display = 'none';
-            leaderboardMenu.style.display = 'none';
-            if (!isPaused && animationFrameId === null) {
-                lastTime = performance.now();
-                draw();
-            } else if (isPaused) {
-                cancelAnimationFrame(animationFrameId);
-                animationFrameId = null;
-            }
+            document.getElementById('pauseBtn').textContent = isPaused ? 'Resume' : 'Pause';
+            if (!isPaused && !isGameOver) gameLoop();
+            if (isPaused) showLeaderboard();
         }
 
-        resumeBtn.addEventListener('click', togglePause);
-        saveBtn.addEventListener('click', saveGame);
-        loadBtn.addEventListener('click', () => {
-            loadGame();
-            togglePause();
-        });
-        newGameBtn.addEventListener('click', () => {
-            newGame();
-            togglePause();
-        });
-
-        // Obsługa dotyku
-        canvas.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            touchX = e.touches[0].clientX;
-        });
-
-        canvas.addEventListener('touchmove', (e) => {
-            e.preventDefault();
-            if(touchX !== null) {
-                const newX = e.touches[0].clientX;
-                const diff = newX - touchX;
-                paddle.x += diff;
-                touchX = newX;
-                if(paddle.x < 0) paddle.x = 0;
-                if(paddle.x + paddle.width > canvas.width) paddle.x = canvas.width - paddle.width;
-            }
-        });
-
-        canvas.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            touchX = null;
-        });
-
-        // Aktualizacja timera paletki
-        function updatePaddleTimerDisplay() {
-            if (paddleTimer > 0) {
-                paddleTimerElem.style.display = 'block';
-                paddleTimerElem.textContent = `Paddle: ${Math.ceil(paddleTimer)}s`;
-            } else {
-                paddleTimerElem.style.display = 'none';
-            }
-        }
-
-        // Dodawanie nowych piłek i efektów
-        function addExtraBalls(brickX, brickY) {
-            const rand = Math.random();
-            if (rand < 0.015) {
-                for(let i = 0; i < 3; i++) {
-                    balls.push({
-                        x: brickX + brick.width/2,
-                        y: brickY + brick.height,
-                        radius: window.innerWidth * 0.02,
-                        dx: (Math.random() - 0.5) * 6 * (1 + level * 0.1),
-                        dy: 3 * (1 + level * 0.1)
-                    });
+        function gameLoop() {
+            if (isPaused || isGameOver) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawPaddle();
+            balls.forEach((ball, index) => {
+                ball.x += ball.dx;
+                ball.y += ball.dy;
+                if (ball.x + ball.radius > canvas.width || ball.x - ball.radius < 0) ball.dx *= -1;
+                if (ball.y - ball.radius < 0) ball.dy *= -1;
+                if (ball.y + ball.radius > paddle.y && ball.x > paddle.x && ball.x < paddle.x + paddle.width) {
+                    ball.dy *= -1;
+                    score += 10;
+                    if (score % 50 === 0) levelUp();
                 }
-            } else if (rand < 0.02) {
-                const currentBalls = [...balls];
-                currentBalls.forEach(ball => {
-                    balls.push({
-                        x: ball.x,
-                        y: ball.y,
-                        radius: ball.radius,
-                        dx: ball.dx * -1,
-                        dy: ball.dy
-                    });
-                });
-            } else if (rand < 0.025) {
-                paddle.width = paddle.defaultWidth * 1.5;
-                paddleTimer = 10 + Math.random() * 10;
-                updatePaddleTimerDisplay();
-            }
-        }
-
-        // Poprawiona detekcja kolizji
-        function collisionDetection() {
-            let bricksLeft = 0;
-            for(let c = 0; c < brickColumnCount; c++) {
-                for(let r = 0; r < brickRowCount; r++) {
-                    const b = bricks[c][r];
-                    if(b.status === 1) {
-                        bricksLeft++;
-                        balls.forEach(ball => {
-                            const closestX = Math.max(b.x, Math.min(ball.x, b.x + brick.width));
-                            const closestY = Math.max(b.y, Math.min(ball.y, b.y + brick.height));
-                            const distanceX = ball.x - closestX;
-                            const distanceY = ball.y - closestY;
-                            const distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
-
-                            if(distance < ball.radius) {
-                                const dx = ball.x - (b.x + brick.width/2);
-                                const dy = ball.y - (b.y + brick.height/2);
-                                if(Math.abs(dx) > Math.abs(dy)) {
-                                    ball.dx = -ball.dx;
-                                } else {
-                                    ball.dy = -ball.dy;
-                                }
-                                b.status = 0;
-                                score += 10;
-                                scoreElem.textContent = `Score: ${score}`;
-                                addExtraBalls(b.x, b.y);
-                            }
-                        });
-                    }
-                }
-            }
-            if(bricksLeft === 0) {
-                level++;
-                brick = initializeLevel();
-            }
-        }
-
-        // Rysowanie piłki
-        function drawBall(ball) {
-            ctx.beginPath();
-            if (isBasketball) {
-                ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI*2);
-                ctx.fillStyle = '#f28c38';
-                ctx.fill();
-                ctx.strokeStyle = '#000';
-                ctx.lineWidth = 2;
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.arc(ball.x, ball.y, ball.radius * 0.8, 0, Math.PI*2);
-                ctx.stroke();
-            } else {
-                ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI*2);
-                ctx.fillStyle = document.body.classList.contains('dark-theme') ? '#ccc' : '#0095DD';
-                ctx.fill();
-            }
-            ctx.closePath();
+                if (ball.y > canvas.height) balls.splice(index, 1);
+                drawBall(ball);
+            });
+            scoreDisplay.textContent = score;
+            levelDisplay.textContent = level;
+            if (balls.length === 0) gameOver();
+            else requestAnimationFrame(gameLoop);
         }
 
         function drawPaddle() {
+            canvas.addEventListener('mousemove', (e) => {
+                const rect = canvas.getBoundingClientRect();
+                paddle.x = e.clientX - rect.left - paddle.width / 2;
+                if (paddle.x < 0) paddle.x = 0;
+                if (paddle.x + paddle.width > canvas.width) paddle.x = canvas.width - paddle.width;
+            });
+            ctx.fillStyle = 'white';
+            ctx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height);
+        }
+
+        function drawBall(ball) {
             ctx.beginPath();
-            ctx.rect(paddle.x, paddle.y, paddle.width, paddle.height);
-            ctx.fillStyle = paddleColor;
+            ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+            ctx.fillStyle = 'red';
             ctx.fill();
             ctx.closePath();
         }
 
-        function drawBricks() {
-            for(let c = 0; c < brickColumnCount; c++) {
-                for(let r = 0; r < brickRowCount; r++) {
-                    if(bricks[c][r].status === 1) {
-                        const brickX = c * (brick.width + brick.padding) + brick.offsetLeft;
-                        const brickY = r * (brick.height + brick.padding) + brick.offsetTop;
-                        bricks[c][r].x = brickX;
-                        bricks[c][r].y = brickY;
-                        ctx.beginPath();
-                        ctx.rect(brickX, brickY, brick.width, brick.height);
-                        ctx.fillStyle = brickColor;
-                        ctx.fill();
-                        ctx.closePath();
-                    }
-                }
+        function levelUp() {
+            level++;
+            balls.push({ x: 400, y: 300, dx: 4 + level, dy: -4 - level, radius: 10 });
+        }
+
+        function gameOver() {
+            isGameOver = true;
+            canvas.style.display = 'none';
+            gameInfo.style.display = 'none';
+            saveScore(score);
+            menu.style.display = 'block';
+        }
+
+        function saveScore(score) {
+            const users = JSON.parse(localStorage.getItem('users') || '{}');
+            if (users[user].highScore < score) {
+                users[user].highScore = score;
+                localStorage.setItem('users', JSON.stringify(users));
             }
         }
 
-        // Główna pętla gry
-        function draw() {
-            if (isPaused) return;
-
-            const currentTime = performance.now();
-            const deltaTime = (currentTime - lastTime) / 1000;
-            lastTime = currentTime;
-
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            drawBricks();
-            balls.forEach(drawBall);
-            drawPaddle();
-            collisionDetection();
-
-            if (paddleTimer > 0) {
-                paddleTimer -= deltaTime;
-                if (paddleTimer <= 0) {
-                    paddleTimer = 0;
-                    paddle.width = paddle.defaultWidth;
-                }
-                updatePaddleTimerDisplay();
-            }
-
-            balls = balls.filter(ball => {
-                if(ball.x + ball.dx > canvas.width - ball.radius || ball.x + ball.dx < ball.radius) {
-                    ball.dx = -ball.dx;
-                }
-                if(ball.y + ball.dy < ball.radius) {
-                    ball.dy = -ball.dy;
-                }
-                if(ball.y + ball.dy > paddle.y - ball.radius && 
-                   ball.y + ball.dy < paddle.y + paddle.height + ball.radius && 
-                   ball.x > paddle.x - ball.radius && 
-                   ball.x < paddle.x + paddle.width + ball.radius) {
-                    if(ball.y <= paddle.y) {
-                        ball.dy = -Math.abs(ball.dy);
-                    }
-                }
-                if(ball.y > paddle.y + paddle.height + ball.radius) {
-                    return false;
-                }
-
-                ball.x += ball.dx;
-                ball.y += ball.dy;
-                return true;
+        function showLeaderboard() {
+            menu.appendChild(leaderboardList);
+            leaderboardList.innerHTML = '<h2>Leaderboard</h2>';
+            const users = JSON.parse(localStorage.getItem('users') || '{}');
+            const scores = Object.entries(users)
+                .map(([nick, data]) => ({ nick, score: data.highScore }))
+                .sort((a, b) => b.score - a.score)
+                .slice(0, 10);
+            scores.forEach((entry, index) => {
+                const div = document.createElement('div');
+                div.textContent = `${index + 1}. ${entry.nick}: ${entry.score}`;
+                leaderboardList.appendChild(div);
             });
-
-            if(balls.length === 0) {
-                const save = confirm(`Game Over! Score: ${score}\nDo you want to save your score?`);
-                if (save) saveScore(score);
-                document.location.reload();
-            }
-
-            animationFrameId = requestAnimationFrame(draw);
-        }
-
-        // Uruchomienie gry
-        try {
-            lastTime = performance.now();
-            draw();
-        } catch(error) {
-            console.error('Błąd gry:', error);
-            alert('Wystąpił błąd przy uruchamianiu gry');
         }
     </script>
 </body>
 </html>
+​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​
