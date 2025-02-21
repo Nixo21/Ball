@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Beat Ball Mobile</title>
+    <title>Beat Ball Mobile Levels</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
         * {
@@ -22,25 +22,28 @@
             background: #f0f0f0;
             border: 2px solid black;
         }
-        #score {
+        #score, #level {
             position: absolute;
             top: 5px;
-            left: 5px;
             color: white;
             font-family: Arial, sans-serif;
             font-size: 16px;
             z-index: 10;
         }
+        #score { left: 5px; }
+        #level { right: 5px; }
     </style>
 </head>
 <body>
     <div id="score">Score: 0</div>
+    <div id="level">Level: 1</div>
     <canvas id="gameCanvas"></canvas>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const scoreElem = document.getElementById('score');
+        const levelElem = document.getElementById('level');
 
         // Ustawienie rozmiaru canvas
         function resizeCanvas() {
@@ -50,10 +53,10 @@
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
 
-        // Tablica piłek (zamiast pojedynczej piłki)
+        // Początkowe ustawienia gry
         let balls = [{
             x: window.innerWidth/2,
-            y: window.innerHeight * 0.8, // Przesunięte do 80% wysokości
+            y: window.innerHeight * 0.8,
             radius: window.innerWidth * 0.02,
             dx: 3,
             dy: -3
@@ -63,7 +66,7 @@
             width: window.innerWidth * 0.2,
             height: window.innerHeight * 0.02,
             x: (window.innerWidth * 0.4),
-            y: window.innerHeight * 0.9, // Paletka na 90% wysokości
+            y: window.innerHeight * 0.9,
             speed: 7
         };
 
@@ -77,18 +80,34 @@
 
         // Zmienne gry
         let score = 0;
+        let level = 1;
         let touchX = null;
-        const brickRowCount = 3;
-        const brickColumnCount = Math.floor(window.innerWidth / (brick.width + brick.padding));
-        const bricks = [];
+        let brickRowCount = 3;
+        let brickColumnCount = Math.floor(window.innerWidth / (brick.width + brick.padding));
+        let bricks = [];
+        let totalBricks = 0;
 
-        // Tworzenie cegieł
-        for(let c = 0; c < brickColumnCount; c++) {
-            bricks[c] = [];
-            for(let r = 0; r < brickRowCount; r++) {
-                bricks[c][r] = { x: 0, y: 0, status: 1 };
+        // Funkcja inicjalizacji poziomu
+        function initializeLevel() {
+            bricks = [];
+            brickRowCount = 3 + Math.floor(level / 2); // Zwiększa się co 2 poziomy
+            balls.forEach(ball => {
+                ball.dx *= 1.1; // Przyspieszenie o 10% na poziom
+                ball.dy *= 1.1;
+                ball.x = window.innerWidth/2;
+                ball.y = window.innerHeight * 0.8;
+            });
+
+            for(let c = 0; c < brickColumnCount; c++) {
+                bricks[c] = [];
+                for(let r = 0; r < brickRowCount; r++) {
+                    bricks[c][r] = { x: 0, y: 0, status: 1 };
+                }
             }
+            totalBricks = brickRowCount * brickColumnCount;
+            levelElem.textContent = `Level: ${level}`;
         }
+        initializeLevel();
 
         // Obsługa dotyku
         canvas.addEventListener('touchstart', (e) => {
@@ -115,14 +134,14 @@
 
         // Dodawanie nowych piłek
         function addExtraBalls(brickX, brickY) {
-            if (Math.random() < 0.1) { // 10% szans
+            if (Math.random() < 0.1) {
                 for(let i = 0; i < 3; i++) {
                     balls.push({
                         x: brickX + brick.width/2,
                         y: brickY + brick.height,
                         radius: window.innerWidth * 0.02,
-                        dx: (Math.random() - 0.5) * 6, // Losowa prędkość w poziomie
-                        dy: 3 // Stała prędkość w pionie
+                        dx: (Math.random() - 0.5) * 6 * (1 + level * 0.1), // Skalowanie z poziomem
+                        dy: 3 * (1 + level * 0.1)
                     });
                 }
             }
@@ -130,10 +149,12 @@
 
         // Detekcja kolizji
         function collisionDetection() {
+            let bricksLeft = 0;
             for(let c = 0; c < brickColumnCount; c++) {
                 for(let r = 0; r < brickRowCount; r++) {
                     const b = bricks[c][r];
                     if(b.status === 1) {
+                        bricksLeft++;
                         balls.forEach(ball => {
                             if(ball.x > b.x && ball.x < b.x + brick.width && 
                                ball.y > b.y && ball.y < b.y + brick.height) {
@@ -141,15 +162,16 @@
                                 b.status = 0;
                                 score += 10;
                                 scoreElem.textContent = `Score: ${score}`;
-                                addExtraBalls(b.x, b.y); // Szansa na dodatkowe piłki
-                                if(score === brickRowCount * brickColumnCount * 10) {
-                                    alert('You Win!');
-                                    document.location.reload();
-                                }
+                                addExtraBalls(b.x, b.y);
                             }
                         });
                     }
                 }
+            }
+            // Przejście na kolejny poziom
+            if(bricksLeft === 0) {
+                level++;
+                initializeLevel();
             }
         }
 
@@ -209,7 +231,7 @@
                     ball.dy = -ball.dy;
                 }
                 else if(ball.y + ball.dy > canvas.height + ball.radius) {
-                    return false; // Usuń piłkę, jeśli wypadnie poza ekran
+                    return false;
                 }
 
                 ball.x += ball.dx;
