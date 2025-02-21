@@ -32,11 +32,21 @@
         }
         #score { left: 5px; }
         #level { right: 5px; }
+        #pauseBtn {
+            position: absolute;
+            top: 30px;
+            left: 5px;
+            padding: 5px 10px;
+            font-size: 16px;
+            cursor: pointer;
+            z-index: 10;
+        }
     </style>
 </head>
 <body>
     <div id="score">Score: 0</div>
     <div id="level">Level: 1</div>
+    <button id="pauseBtn">Pause</button>
     <canvas id="gameCanvas"></canvas>
 
     <script>
@@ -44,6 +54,7 @@
         const ctx = canvas.getContext('2d');
         const scoreElem = document.getElementById('score');
         const levelElem = document.getElementById('level');
+        const pauseBtn = document.getElementById('pauseBtn');
 
         // Ustawienie rozmiaru canvas
         function resizeCanvas() {
@@ -70,7 +81,7 @@
             speed: 7
         };
 
-        const brick = {
+        const brickBase = {
             width: window.innerWidth * 0.1,
             height: window.innerHeight * 0.03,
             padding: window.innerWidth * 0.01,
@@ -83,16 +94,28 @@
         let level = 1;
         let touchX = null;
         let brickRowCount = 3;
-        let brickColumnCount = Math.floor(window.innerWidth / (brick.width + brick.padding));
+        let brickColumnCount = Math.floor(window.innerWidth / (brickBase.width + brickBase.padding));
         let bricks = [];
         let totalBricks = 0;
+        let isPaused = false;
+        let animationFrameId = null;
 
         // Funkcja inicjalizacji poziomu
         function initializeLevel() {
             bricks = [];
-            brickRowCount = 3 + Math.floor(level / 2); // Zwiększa się co 2 poziomy
+            brickRowCount = 3 + level; // Więcej rzędów z każdym poziomem
+            const scaleFactor = 1 - (level * 0.05); // Zmniejszanie rozmiaru o 5% na poziom
+            const brick = {
+                width: brickBase.width * scaleFactor,
+                height: brickBase.height * scaleFactor,
+                padding: brickBase.padding,
+                offsetTop: brickBase.offsetTop,
+                offsetLeft: brickBase.offsetLeft
+            };
+            brickColumnCount = Math.floor(window.innerWidth / (brick.width + brick.padding));
+
             balls.forEach(ball => {
-                ball.dx *= 1.1; // Przyspieszenie o 10% na poziom
+                ball.dx *= 1.1;
                 ball.dy *= 1.1;
                 ball.x = window.innerWidth/2;
                 ball.y = window.innerHeight * 0.8;
@@ -106,8 +129,21 @@
             }
             totalBricks = brickRowCount * brickColumnCount;
             levelElem.textContent = `Level: ${level}`;
+            return brick; // Zwracamy aktualne wymiary cegieł
         }
-        initializeLevel();
+        let brick = initializeLevel();
+
+        // Obsługa pauzy
+        pauseBtn.addEventListener('click', () => {
+            isPaused = !isPaused;
+            pauseBtn.textContent = isPaused ? 'Resume' : 'Pause';
+            if (!isPaused && animationFrameId === null) {
+                draw();
+            } else if (isPaused) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+            }
+        });
 
         // Obsługa dotyku
         canvas.addEventListener('touchstart', (e) => {
@@ -140,7 +176,7 @@
                         x: brickX + brick.width/2,
                         y: brickY + brick.height,
                         radius: window.innerWidth * 0.02,
-                        dx: (Math.random() - 0.5) * 6 * (1 + level * 0.1), // Skalowanie z poziomem
+                        dx: (Math.random() - 0.5) * 6 * (1 + level * 0.1),
                         dy: 3 * (1 + level * 0.1)
                     });
                 }
@@ -168,10 +204,9 @@
                     }
                 }
             }
-            // Przejście na kolejny poziom
             if(bricksLeft === 0) {
                 level++;
-                initializeLevel();
+                brick = initializeLevel();
             }
         }
 
@@ -212,6 +247,8 @@
 
         // Główna pętla gry
         function draw() {
+            if (isPaused) return;
+
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             drawBricks();
             balls.forEach(drawBall);
@@ -244,7 +281,7 @@
                 document.location.reload();
             }
 
-            requestAnimationFrame(draw);
+            animationFrameId = requestAnimationFrame(draw);
         }
 
         // Uruchomienie gry
