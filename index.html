@@ -102,6 +102,16 @@
             height: 20px;
             cursor: pointer;
         }
+        .code-input {
+            margin: 10px 0;
+        }
+        #codeInput {
+            padding: 1vh 2vw;
+            font-size: 3vw;
+            width: 60%;
+            border-radius: 5px;
+            border: 1px solid #fff;
+        }
 
         /* Styl dla ciemnego motywu */
         body.dark-theme {
@@ -130,6 +140,11 @@
             background: #555;
             color: #fff;
         }
+        .dark-theme #codeInput {
+            background: #666;
+            color: #fff;
+            border-color: #fff;
+        }
     </style>
 </head>
 <body>
@@ -147,6 +162,10 @@
             <label for="themeSwitch">Dark Theme</label>
             <input type="checkbox" id="themeSwitch">
         </div>
+        <div class="code-input">
+            <input type="text" id="codeInput" placeholder="Enter code">
+            <button id="redeemBtn">Redeem</button>
+        </div>
     </div>
     <canvas id="gameCanvas"></canvas>
 
@@ -163,6 +182,8 @@
         const loadBtn = document.getElementById('loadBtn');
         const newGameBtn = document.getElementById('newGameBtn');
         const themeSwitch = document.getElementById('themeSwitch');
+        const codeInput = document.getElementById('codeInput');
+        const redeemBtn = document.getElementById('redeemBtn');
 
         // Ustawienie rozmiaru canvas
         function resizeCanvas() {
@@ -338,9 +359,41 @@
             updatePaddleTimerDisplay();
         }
 
+        // Obsługa kodów
+        function redeemCode() {
+            const code = codeInput.value.trim().toLowerCase();
+            switch(code) {
+                case "extraballs":
+                    balls.push({
+                        x: paddle.x + paddle.width/2,
+                        y: paddle.y - 20,
+                        radius: window.innerWidth * 0.02,
+                        dx: 3,
+                        dy: -3
+                    });
+                    alert("Extra ball added!");
+                    break;
+                case "bigpaddle":
+                    paddle.width = paddle.defaultWidth * 2;
+                    paddleTimer = 30;
+                    updatePaddleTimerDisplay();
+                    alert("Paddle enlarged for 30 seconds!");
+                    break;
+                case "scoreboost":
+                    score += 100;
+                    scoreElem.textContent = `Score: ${score}`;
+                    alert("Score boosted by 100!");
+                    break;
+                default:
+                    alert("Invalid code!");
+            }
+            codeInput.value = "";
+        }
+
         // Obsługa pauzy
         pauseBtn.addEventListener('click', togglePause);
         themeSwitch.addEventListener('change', toggleTheme);
+        redeemBtn.addEventListener('click', redeemCode);
 
         function togglePause() {
             isPaused = !isPaused;
@@ -401,7 +454,7 @@
         // Dodawanie nowych piłek i efektów
         function addExtraBalls(brickX, brickY) {
             const rand = Math.random();
-            if (rand < 0.005) { // 0.5% szans na 3 kulki
+            if (rand < 0.015) { // 1.5% szans na 3 kulki
                 for(let i = 0; i < 3; i++) {
                     balls.push({
                         x: brickX + brick.width/2,
@@ -411,7 +464,7 @@
                         dy: 3 * (1 + level * 0.1)
                     });
                 }
-            } else if (rand < 0.0051) { // 0.01% szans na podwojenie
+            } else if (rand < 0.02) { // 0.5% szans na podwojenie
                 const currentBalls = [...balls];
                 currentBalls.forEach(ball => {
                     balls.push({
@@ -422,9 +475,9 @@
                         dy: ball.dy
                     });
                 });
-            } else if (rand < 0.01) { // 0.5% szans na powiększenie paletki
+            } else if (rand < 0.025) { // 0.5% szans na powiększenie paletki
                 paddle.width = paddle.defaultWidth * 1.5;
-                paddleTimer = 10 + Math.random() * 10; // 10-20 sekund
+                paddleTimer = 10 + Math.random() * 10;
                 updatePaddleTimerDisplay();
             }
         }
@@ -507,7 +560,7 @@
             if (isPaused) return;
 
             const currentTime = performance.now();
-            const deltaTime = (currentTime - lastTime) / 1000; // w sekundach
+            const deltaTime = (currentTime - lastTime) / 1000;
             lastTime = currentTime;
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -516,7 +569,6 @@
             drawPaddle();
             collisionDetection();
 
-            // Aktualizacja timera paletki
             if (paddleTimer > 0) {
                 paddleTimer -= deltaTime;
                 if (paddleTimer <= 0) {
@@ -526,7 +578,6 @@
                 updatePaddleTimerDisplay();
             }
 
-            // Ruch piłek i kolizje
             balls = balls.filter(ball => {
                 if(ball.x + ball.dx > canvas.width - ball.radius || ball.x + ball.dx < ball.radius) {
                     ball.dx = -ball.dx;
