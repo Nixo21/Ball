@@ -38,12 +38,13 @@
         #level { 
             top: 1vh;
             right: 1vw;
-            transform: translateX(0); /* Zapobiega przesunięciu poza ekran */
+            transform: translateX(0);
         }
         #pauseBtn {
             position: absolute;
-            top: 10vh; /* Przesunięty niżej, aby nie zasłaniać bloków */
-            left: 1vw;
+            top: 1vh; /* Na tej samej wysokości co Score i Level */
+            left: 50%; /* Wyśrodkowanie */
+            transform: translateX(-50%); /* Przesunięcie o połowę szerokości przycisku */
             padding: 1vh 2vw;
             font-size: 3vw;
             cursor: pointer;
@@ -131,8 +132,8 @@
             width: window.innerWidth * 0.1,
             height: window.innerHeight * 0.03,
             padding: window.innerWidth * 0.01,
-            offsetTop: window.innerHeight * 0.07, /* Przesunięte niżej, aby uniknąć nakładania na UI */
-            offsetLeft: window.innerWidth * 0.02
+            offsetTop: window.innerHeight * 0.07,
+            offsetLeft: 0 /* Będziemy obliczać wyśrodkowanie dynamicznie */
         };
 
         // Zmienne gry
@@ -140,13 +141,13 @@
         let level = 1;
         let touchX = null;
         let brickRowCount = 3;
-        let brickColumnCount = Math.floor((window.innerWidth - brickBase.offsetLeft * 2) / (brickBase.width + brickBase.padding));
+        let brickColumnCount = 0;
         let bricks = [];
         let totalBricks = 0;
         let isPaused = false;
         let animationFrameId = null;
 
-        // Funkcja inicjalizacji poziomu
+        // Funkcja inicjalizacji poziomu z wyśrodkowaniem bloków
         function initializeLevel() {
             bricks = [];
             brickRowCount = 3 + level;
@@ -156,9 +157,12 @@
                 height: brickBase.height * scaleFactor,
                 padding: brickBase.padding,
                 offsetTop: brickBase.offsetTop,
-                offsetLeft: brickBase.offsetLeft
+                offsetLeft: 0 // Początkowo 0, obliczymy poniżej
             };
-            brickColumnCount = Math.floor((window.innerWidth - brick.offsetLeft * 2) / (brick.width + brick.padding));
+            brickColumnCount = Math.floor(window.innerWidth / (brick.width + brick.padding));
+            // Wyśrodkowanie bloków
+            const totalBricksWidth = brickColumnCount * (brick.width + brick.padding) - brick.padding;
+            brick.offsetLeft = (window.innerWidth - totalBricksWidth) / 2;
 
             balls.forEach(ball => {
                 ball.dx *= 1.1;
