@@ -50,19 +50,20 @@
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
 
-        // Obiekty gry z proporcjonalnymi wymiarami
-        const ball = {
+        // Tablica piłek (zamiast pojedynczej piłki)
+        let balls = [{
             x: window.innerWidth/2,
-            y: window.innerHeight-50,
+            y: window.innerHeight * 0.8, // Przesunięte do 80% wysokości
             radius: window.innerWidth * 0.02,
             dx: 3,
             dy: -3
-        };
+        }];
 
         const paddle = {
             width: window.innerWidth * 0.2,
             height: window.innerHeight * 0.02,
             x: (window.innerWidth * 0.4),
+            y: window.innerHeight * 0.9, // Paletka na 90% wysokości
             speed: 7
         };
 
@@ -112,30 +113,48 @@
             touchX = null;
         });
 
+        // Dodawanie nowych piłek
+        function addExtraBalls(brickX, brickY) {
+            if (Math.random() < 0.1) { // 10% szans
+                for(let i = 0; i < 3; i++) {
+                    balls.push({
+                        x: brickX + brick.width/2,
+                        y: brickY + brick.height,
+                        radius: window.innerWidth * 0.02,
+                        dx: (Math.random() - 0.5) * 6, // Losowa prędkość w poziomie
+                        dy: 3 // Stała prędkość w pionie
+                    });
+                }
+            }
+        }
+
         // Detekcja kolizji
         function collisionDetection() {
             for(let c = 0; c < brickColumnCount; c++) {
                 for(let r = 0; r < brickRowCount; r++) {
                     const b = bricks[c][r];
                     if(b.status === 1) {
-                        if(ball.x > b.x && ball.x < b.x + brick.width && 
-                           ball.y > b.y && ball.y < b.y + brick.height) {
-                            ball.dy = -ball.dy;
-                            b.status = 0;
-                            score += 10;
-                            scoreElem.textContent = `Score: ${score}`;
-                            if(score === brickRowCount * brickColumnCount * 10) {
-                                alert('You Win!');
-                                document.location.reload();
+                        balls.forEach(ball => {
+                            if(ball.x > b.x && ball.x < b.x + brick.width && 
+                               ball.y > b.y && ball.y < b.y + brick.height) {
+                                ball.dy = -ball.dy;
+                                b.status = 0;
+                                score += 10;
+                                scoreElem.textContent = `Score: ${score}`;
+                                addExtraBalls(b.x, b.y); // Szansa na dodatkowe piłki
+                                if(score === brickRowCount * brickColumnCount * 10) {
+                                    alert('You Win!');
+                                    document.location.reload();
+                                }
                             }
-                        }
+                        });
                     }
                 }
             }
         }
 
         // Rysowanie
-        function drawBall() {
+        function drawBall(ball) {
             ctx.beginPath();
             ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI*2);
             ctx.fillStyle = '#0095DD';
@@ -145,7 +164,7 @@
 
         function drawPaddle() {
             ctx.beginPath();
-            ctx.rect(paddle.x, canvas.height - paddle.height, paddle.width, paddle.height);
+            ctx.rect(paddle.x, paddle.y, paddle.width, paddle.height);
             ctx.fillStyle = '#0095DD';
             ctx.fill();
             ctx.closePath();
@@ -173,28 +192,35 @@
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             drawBricks();
-            drawBall();
+            balls.forEach(drawBall);
             drawPaddle();
             collisionDetection();
 
-            // Ruch piłki i kolizje
-            if(ball.x + ball.dx > canvas.width - ball.radius || ball.x + ball.dx < ball.radius) {
-                ball.dx = -ball.dx;
-            }
-            if(ball.y + ball.dy < ball.radius) {
-                ball.dy = -ball.dy;
-            }
-            else if(ball.y + ball.dy > canvas.height - ball.radius) {
-                if(ball.x > paddle.x && ball.x < paddle.x + paddle.width) {
-                    ball.dy = -ball.dy;
-                } else {
-                    alert('Game Over! Score: ' + score);
-                    document.location.reload();
+            // Ruch piłek i kolizje
+            balls = balls.filter(ball => {
+                if(ball.x + ball.dx > canvas.width - ball.radius || ball.x + ball.dx < ball.radius) {
+                    ball.dx = -ball.dx;
                 }
-            }
+                if(ball.y + ball.dy < ball.radius) {
+                    ball.dy = -ball.dy;
+                }
+                else if(ball.y + ball.dy > paddle.y - ball.radius && 
+                        ball.x > paddle.x && ball.x < paddle.x + paddle.width) {
+                    ball.dy = -ball.dy;
+                }
+                else if(ball.y + ball.dy > canvas.height + ball.radius) {
+                    return false; // Usuń piłkę, jeśli wypadnie poza ekran
+                }
 
-            ball.x += ball.dx;
-            ball.y += ball.dy;
+                ball.x += ball.dx;
+                ball.y += ball.dy;
+                return true;
+            });
+
+            if(balls.length === 0) {
+                alert('Game Over! Score: ' + score);
+                document.location.reload();
+            }
 
             requestAnimationFrame(draw);
         }
