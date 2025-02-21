@@ -136,7 +136,7 @@
         function initializeLevel() {
             bricks = [];
             brickRowCount = 3 + level;
-            const scaleFactor = Math.max(0.3, 1 - (level * 0.05));
+            const scaleFactor = Math.max(0.5, 1 - (level * 0.03)); // Minimum 50% rozmiaru, zmniejszanie o 3% na poziom
             const brick = {
                 width: brickBase.width * scaleFactor,
                 height: brickBase.height * scaleFactor,
@@ -289,7 +289,7 @@
             }
         }
 
-        // Detekcja kolizji
+        // Poprawiona detekcja kolizji
         function collisionDetection() {
             let bricksLeft = 0;
             for(let c = 0; c < brickColumnCount; c++) {
@@ -298,9 +298,22 @@
                     if(b.status === 1) {
                         bricksLeft++;
                         balls.forEach(ball => {
-                            if(ball.x > b.x && ball.x < b.x + brick.width && 
-                               ball.y > b.y && ball.y < b.y + brick.height) {
-                                ball.dy = -ball.dy;
+                            // Sprawdzenie kolizji z uwzględnieniem krawędzi
+                            const closestX = Math.max(b.x, Math.min(ball.x, b.x + brick.width));
+                            const closestY = Math.max(b.y, Math.min(ball.y, b.y + brick.height));
+                            const distanceX = ball.x - closestX;
+                            const distanceY = ball.y - closestY;
+                            const distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
+
+                            if(distance < ball.radius) {
+                                // Określenie strony kolizji
+                                const dx = ball.x - (b.x + brick.width/2);
+                                const dy = ball.y - (b.y + brick.height/2);
+                                if(Math.abs(dx) > Math.abs(dy)) {
+                                    ball.dx = -ball.dx; // Kolizja boczna
+                                } else {
+                                    ball.dy = -ball.dy; // Kolizja góra/dół
+                                }
                                 b.status = 0;
                                 score += 10;
                                 scoreElem.textContent = `Score: ${score}`;
