@@ -258,7 +258,13 @@
         let isBasketball = false;
         let activatedCodes = JSON.parse(localStorage.getItem('activatedCodes')) || {};
 
-        // Lista wszystkich możliwych kodów
+        // Lista wszystkich możliwych kodów trwałych (wyświetlanych w menu)
+        const persistentCodes = {
+            "ba$ketball": true,
+            "MEGABIGWIN": true
+        };
+
+        // Lista wszystkich kodów (dla AdMiN)
         const allCodes = {
             "extraballs": true,
             "bigpaddle": true,
@@ -408,12 +414,16 @@
             if (code === "AdMiN") {
                 activatedCodes = { ...allCodes };
                 activatedCodes["AdMiN"] = false;
+                // Usuwamy jednorazowe kody z listy po użyciu AdMiN
+                delete activatedCodes["extraballs"];
+                delete activatedCodes["bigpaddle"];
+                delete activatedCodes["scoreboost"];
                 isBasketball = true;
                 level = 25;
                 brick = initializeLevel();
                 levelElem.textContent = `Level: ${level}`;
                 updateCodesMenu();
-                alert("All codes unlocked!");
+                alert("All persistent codes unlocked!");
                 success = true;
             } else {
                 switch(code) {
@@ -465,11 +475,11 @@
             codeInput.value = "";
         }
 
-        // Aktualizacja menu kodów
+        // Aktualizacja menu kodów - tylko trwałe kody
         function updateCodesMenu() {
             codesList.innerHTML = "";
             for (const code in activatedCodes) {
-                if (code === "AdMiN") continue;
+                if (code === "AdMiN" || !persistentCodes[code]) continue; // Pomija AdMiN i kody jednorazowe
                 const div = document.createElement('div');
                 const label = document.createElement('span');
                 label.textContent = code;
