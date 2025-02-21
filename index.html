@@ -26,25 +26,26 @@
             position: absolute;
             color: white;
             font-family: Arial, sans-serif;
-            font-size: 4vw; /* Skalowanie względem szerokości ekranu */
+            font-size: 4vw;
             z-index: 10;
             padding: 2px 5px;
-            background: rgba(0, 0, 0, 0.5); /* Lekkie tło dla lepszej widoczności */
+            background: rgba(0, 0, 0, 0.5);
         }
         #score { 
-            top: 1vh; /* Odległość od góry w procentach wysokości */
-            left: 1vw; /* Odległość od lewej w procentach szerokości */
+            top: 1vh;
+            left: 1vw;
         }
         #level { 
-            top: 1vh; 
-            right: 1vw; 
+            top: 1vh;
+            right: 1vw;
+            transform: translateX(0); /* Zapobiega przesunięciu poza ekran */
         }
         #pauseBtn {
             position: absolute;
-            top: 6vh; /* Przesunięty niżej, aby nie nachodził na score/level */
+            top: 10vh; /* Przesunięty niżej, aby nie zasłaniać bloków */
             left: 1vw;
-            padding: 1vh 2vw; /* Skalowanie paddingu */
-            font-size: 3vw; /* Skalowalna czcionka */
+            padding: 1vh 2vw;
+            font-size: 3vw;
             cursor: pointer;
             z-index: 10;
             background: #fff;
@@ -63,9 +64,9 @@
             z-index: 20;
             color: white;
             text-align: center;
-            width: 80vw; /* Ograniczenie szerokości menu */
-            max-height: 80vh; /* Ograniczenie wysokości */
-            overflow-y: auto; /* Przewijanie w pionie, jeśli za dużo treści */
+            width: 80vw;
+            max-height: 80vh;
+            overflow-y: auto;
         }
         #pauseMenu button {
             display: block;
@@ -130,7 +131,7 @@
             width: window.innerWidth * 0.1,
             height: window.innerHeight * 0.03,
             padding: window.innerWidth * 0.01,
-            offsetTop: window.innerHeight * 0.05,
+            offsetTop: window.innerHeight * 0.07, /* Przesunięte niżej, aby uniknąć nakładania na UI */
             offsetLeft: window.innerWidth * 0.02
         };
 
