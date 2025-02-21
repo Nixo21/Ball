@@ -42,9 +42,9 @@
         }
         #pauseBtn {
             position: absolute;
-            top: 1vh; /* Na tej samej wysokości co Score i Level */
-            left: 50%; /* Wyśrodkowanie */
-            transform: translateX(-50%); /* Przesunięcie o połowę szerokości przycisku */
+            top: 1vh;
+            left: 50%;
+            transform: translateX(-50%);
             padding: 1vh 2vw;
             font-size: 3vw;
             cursor: pointer;
@@ -133,7 +133,7 @@
             height: window.innerHeight * 0.03,
             padding: window.innerWidth * 0.01,
             offsetTop: window.innerHeight * 0.07,
-            offsetLeft: 0 /* Będziemy obliczać wyśrodkowanie dynamicznie */
+            offsetLeft: 0
         };
 
         // Zmienne gry
@@ -157,10 +157,9 @@
                 height: brickBase.height * scaleFactor,
                 padding: brickBase.padding,
                 offsetTop: brickBase.offsetTop,
-                offsetLeft: 0 // Początkowo 0, obliczymy poniżej
+                offsetLeft: 0
             };
             brickColumnCount = Math.floor(window.innerWidth / (brick.width + brick.padding));
-            // Wyśrodkowanie bloków
             const totalBricksWidth = brickColumnCount * (brick.width + brick.padding) - brick.padding;
             brick.offsetLeft = (window.innerWidth - totalBricksWidth) / 2;
 
@@ -380,7 +379,7 @@
             }
         }
 
-        // Główna pętla gry
+        // Główna pętla gry z poprawioną detekcją poniżej paletki
         function draw() {
             if (isPaused) return;
 
@@ -392,18 +391,24 @@
 
             // Ruch piłek i kolizje
             balls = balls.filter(ball => {
+                // Kolizja z bokami ekranu
                 if(ball.x + ball.dx > canvas.width - ball.radius || ball.x + ball.dx < ball.radius) {
                     ball.dx = -ball.dx;
                 }
+                // Kolizja z górą ekranu
                 if(ball.y + ball.dy < ball.radius) {
                     ball.dy = -ball.dy;
                 }
-                else if(ball.y + ball.dy > paddle.y - ball.radius && 
-                        ball.x > paddle.x && ball.x < paddle.x + paddle.width) {
-                    ball.dy = -ball.dy;
-                }
-                else if(ball.y + ball.dy > canvas.height + ball.radius) {
-                    return false;
+                // Sprawdzenie kolizji z paletką lub przejścia poniżej
+                else if(ball.y + ball.dy > paddle.y - ball.radius) {
+                    if(ball.x > paddle.x && ball.x < paddle.x + paddle.width && 
+                       ball.y + ball.dy <= paddle.y + paddle.height) {
+                        // Odbicie od paletki tylko jeśli piłka jest nad nią lub na jej poziomie
+                        ball.dy = -ball.dy;
+                    } else if(ball.y > paddle.y) {
+                        // Piłka poniżej paletki - usunięcie
+                        return false;
+                    }
                 }
 
                 ball.x += ball.dx;
