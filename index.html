@@ -62,7 +62,7 @@
             border-radius: 5px;
             transition: background 0.3s, color 0.3s, border-color 0.3s;
         }
-        #pauseMenu, #codesMenu {
+        #pauseMenu, #codesMenu, #leaderboardMenu {
             position: absolute;
             top: 50%;
             left: 50%;
@@ -79,7 +79,7 @@
             overflow-y: auto;
             transition: background 0.3s, color 0.3s;
         }
-        #pauseMenu button, #codesMenu button {
+        #pauseMenu button, #codesMenu button, #leaderboardMenu button {
             display: block;
             margin: 10px auto;
             padding: 1vh 2vw;
@@ -124,6 +124,16 @@
             padding: 0.5vh 1vw;
             font-size: 2.5vw;
         }
+        #leaderboardList {
+            margin: 10px 0;
+            font-size: 3vw;
+        }
+        #leaderboardList div {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px;
+            border-bottom: 1px solid #fff;
+        }
 
         /* Styl dla ciemnego motywu */
         body.dark-theme {
@@ -145,12 +155,14 @@
             border-color: #fff;
         }
         .dark-theme #pauseMenu,
-        .dark-theme #codesMenu {
+        .dark-theme #codesMenu,
+        .dark-theme #leaderboardMenu {
             background: rgba(40, 40, 40, 0.9);
             color: #fff;
         }
         .dark-theme #pauseMenu button,
-        .dark-theme #codesMenu button {
+        .dark-theme #codesMenu button,
+        .dark-theme #leaderboardMenu button {
             background: #555;
             color: #fff;
         }
@@ -181,11 +193,17 @@
             <button id="redeemBtn">Redeem</button>
         </div>
         <button id="codesBtn">Codes</button>
+        <button id="leaderboardBtn">Leaderboard</button>
     </div>
     <div id="codesMenu">
         <h2>Activated Codes</h2>
         <div id="codesList"></div>
         <button id="backBtn">Back</button>
+    </div>
+    <div id="leaderboardMenu">
+        <h2>Leaderboard</h2>
+        <div id="leaderboardList"></div>
+        <button id="leaderboardBackBtn">Back</button>
     </div>
     <canvas id="gameCanvas"></canvas>
 
@@ -198,6 +216,7 @@
         const pauseBtn = document.getElementById('pauseBtn');
         const pauseMenu = document.getElementById('pauseMenu');
         const codesMenu = document.getElementById('codesMenu');
+        const leaderboardMenu = document.getElementById('leaderboardMenu');
         const resumeBtn = document.getElementById('resumeBtn');
         const saveBtn = document.getElementById('saveBtn');
         const loadBtn = document.getElementById('loadBtn');
@@ -206,8 +225,11 @@
         const codeInput = document.getElementById('codeInput');
         const redeemBtn = document.getElementById('redeemBtn');
         const codesBtn = document.getElementById('codesBtn');
+        const leaderboardBtn = document.getElementById('leaderboardBtn');
         const codesList = document.getElementById('codesList');
+        const leaderboardList = document.getElementById('leaderboardList');
         const backBtn = document.getElementById('backBtn');
+        const leaderboardBackBtn = document.getElementById('leaderboardBackBtn');
 
         // Ustawienie rozmiaru canvas
         function resizeCanvas() {
@@ -258,13 +280,13 @@
         let isBasketball = false;
         let activatedCodes = JSON.parse(localStorage.getItem('activatedCodes')) || {};
 
-        // Lista wszystkich możliwych kodów trwałych (wyświetlanych w menu)
+        // Lista trwałych kodów
         const persistentCodes = {
             "ba$ketball": true,
             "MEGABIGWIN": true
         };
 
-        // Lista wszystkich kodów (dla AdMiN)
+        // Lista wszystkich kodów
         const allCodes = {
             "extraballs": true,
             "bigpaddle": true,
@@ -414,7 +436,6 @@
             if (code === "AdMiN") {
                 activatedCodes = { ...allCodes };
                 activatedCodes["AdMiN"] = false;
-                // Usuwamy jednorazowe kody z listy po użyciu AdMiN
                 delete activatedCodes["extraballs"];
                 delete activatedCodes["bigpaddle"];
                 delete activatedCodes["scoreboost"];
@@ -475,11 +496,49 @@
             codeInput.value = "";
         }
 
-        // Aktualizacja menu kodów - tylko trwałe kody
+        // Tabela wyników
+        function saveScore(score) {
+            let localScores = JSON.parse(localStorage.getItem('localScores')) || [];
+            localScores.push({ score: score, date: new Date().toISOString() });
+            localScores.sort((a, b) => b.score - a.score);
+            localScores = localScores.slice(0, 10);
+            localStorage.setItem('localScores', JSON.stringify(localScores));
+        }
+
+        function updateLeaderboard() {
+            leaderboardList.innerHTML = "";
+            let localScores = JSON.parse(localStorage.getItem('localScores')) || [];
+            localScores.sort((a, b) => b.score - a.score);
+
+            // Symulacja globalnego rankingu
+            const globalScores = [
+                { score: 10000, name: "Player1" },
+                { score: 8000, name: "Player2" },
+                { score: 6000, name: "Player3" },
+                { score: 4000, name: "Player4" },
+                { score: 2000, name: "Player5" },
+                ...localScores.map(s => ({ score: s.score, name: "You" }))
+            ].sort((a, b) => b.score - a.score);
+
+            let playerRank = globalScores.findIndex(s => s.name === "You" && s.score === score) + 1;
+            if (playerRank > 999) playerRank = "999+";
+
+            globalScores.slice(0, 10).forEach((entry, index) => {
+                const div = document.createElement('div');
+                div.innerHTML = `<span>${index + 1}. ${entry.name}</span><span>${entry.score}</span>`;
+                leaderboardList.appendChild(div);
+            });
+
+            const rankDiv = document.createElement('div');
+            rankDiv.innerHTML = `<span>Your Rank:</span><span>${playerRank}</span>`;
+            leaderboardList.appendChild(rankDiv);
+        }
+
+        // Aktualizacja menu kodów
         function updateCodesMenu() {
             codesList.innerHTML = "";
             for (const code in activatedCodes) {
-                if (code === "AdMiN" || !persistentCodes[code]) continue; // Pomija AdMiN i kody jednorazowe
+                if (code === "AdMiN" || !persistentCodes[code]) continue;
                 const div = document.createElement('div');
                 const label = document.createElement('span');
                 label.textContent = code;
@@ -507,11 +566,20 @@
         function showCodesMenu() {
             pauseMenu.style.display = 'none';
             codesMenu.style.display = 'block';
+            leaderboardMenu.style.display = 'none';
             updateCodesMenu();
+        }
+
+        function showLeaderboardMenu() {
+            pauseMenu.style.display = 'none';
+            codesMenu.style.display = 'none';
+            leaderboardMenu.style.display = 'block';
+            updateLeaderboard();
         }
 
         function showPauseMenu() {
             codesMenu.style.display = 'none';
+            leaderboardMenu.style.display = 'none';
             pauseMenu.style.display = 'block';
         }
 
@@ -520,12 +588,15 @@
         themeSwitch.addEventListener('change', toggleTheme);
         redeemBtn.addEventListener('click', redeemCode);
         codesBtn.addEventListener('click', showCodesMenu);
+        leaderboardBtn.addEventListener('click', showLeaderboardMenu);
         backBtn.addEventListener('click', showPauseMenu);
+        leaderboardBackBtn.addEventListener('click', showPauseMenu);
 
         function togglePause() {
             isPaused = !isPaused;
             pauseMenu.style.display = isPaused ? 'block' : 'none';
             codesMenu.style.display = 'none';
+            leaderboardMenu.style.display = 'none';
             if (!isPaused && animationFrameId === null) {
                 lastTime = performance.now();
                 draw();
@@ -743,7 +814,8 @@
             });
 
             if(balls.length === 0) {
-                alert('Game Over! Score: ' + score);
+                const save = confirm(`Game Over! Score: ${score}\nDo you want to save your score?`);
+                if (save) saveScore(score);
                 document.location.reload();
             }
 
