@@ -32,6 +32,15 @@
         }
         #score { left: 5px; }
         #level { right: 5px; }
+        #pauseBtn {
+            position: absolute;
+            top: 30px;
+            left: 5px;
+            padding: 5px 10px;
+            font-size: 16px;
+            cursor: pointer;
+            z-index: 10;
+        }
         #pauseMenu {
             position: absolute;
             top: 50%;
@@ -57,6 +66,7 @@
 <body>
     <div id="score">Score: 0</div>
     <div id="level">Level: 1</div>
+    <button id="pauseBtn">Pause</button>
     <div id="pauseMenu">
         <h2>Paused</h2>
         <button id="resumeBtn">Resume</button>
@@ -71,6 +81,7 @@
         const ctx = canvas.getContext('2d');
         const scoreElem = document.getElementById('score');
         const levelElem = document.getElementById('level');
+        const pauseBtn = document.getElementById('pauseBtn');
         const pauseMenu = document.getElementById('pauseMenu');
         const resumeBtn = document.getElementById('resumeBtn');
         const saveBtn = document.getElementById('saveBtn');
@@ -177,7 +188,7 @@
                 balls = gameState.balls;
                 paddle.x = gameState.paddle.x;
                 bricks = gameState.bricks;
-                brick = initializeLevel(); // Ustawienie wymiarów cegieł
+                brick = initializeLevel();
                 scoreElem.textContent = `Score: ${score}`;
                 levelElem.textContent = `Level: ${level}`;
                 alert('Game Loaded!');
@@ -204,9 +215,7 @@
         }
 
         // Obsługa pauzy
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' || e.key === 'p') togglePause();
-        });
+        pauseBtn.addEventListener('click', togglePause);
 
         function togglePause() {
             isPaused = !isPaused;
