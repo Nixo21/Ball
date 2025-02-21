@@ -32,21 +32,38 @@
         }
         #score { left: 5px; }
         #level { right: 5px; }
-        #pauseBtn {
+        #pauseMenu {
             position: absolute;
-            top: 30px;
-            left: 5px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            display: none;
+            z-index: 20;
+            color: white;
+            text-align: center;
+        }
+        #pauseMenu button {
+            display: block;
+            margin: 10px auto;
             padding: 5px 10px;
             font-size: 16px;
             cursor: pointer;
-            z-index: 10;
         }
     </style>
 </head>
 <body>
     <div id="score">Score: 0</div>
     <div id="level">Level: 1</div>
-    <button id="pauseBtn">Pause</button>
+    <div id="pauseMenu">
+        <h2>Paused</h2>
+        <button id="resumeBtn">Resume</button>
+        <button id="saveBtn">Save Game</button>
+        <button id="loadBtn">Load Game</button>
+        <button id="newGameBtn">New Game</button>
+    </div>
     <canvas id="gameCanvas"></canvas>
 
     <script>
@@ -54,7 +71,11 @@
         const ctx = canvas.getContext('2d');
         const scoreElem = document.getElementById('score');
         const levelElem = document.getElementById('level');
-        const pauseBtn = document.getElementById('pauseBtn');
+        const pauseMenu = document.getElementById('pauseMenu');
+        const resumeBtn = document.getElementById('resumeBtn');
+        const saveBtn = document.getElementById('saveBtn');
+        const loadBtn = document.getElementById('loadBtn');
+        const newGameBtn = document.getElementById('newGameBtn');
 
         // Ustawienie rozmiaru canvas
         function resizeCanvas() {
@@ -103,8 +124,8 @@
         // Funkcja inicjalizacji poziomu
         function initializeLevel() {
             bricks = [];
-            brickRowCount = 3 + level; // Więcej rzędów z każdym poziomem
-            const scaleFactor = 1 - (level * 0.05); // Zmniejszanie rozmiaru o 5% na poziom
+            brickRowCount = 3 + level;
+            const scaleFactor = 1 - (level * 0.05);
             const brick = {
                 width: brickBase.width * scaleFactor,
                 height: brickBase.height * scaleFactor,
@@ -129,20 +150,84 @@
             }
             totalBricks = brickRowCount * brickColumnCount;
             levelElem.textContent = `Level: ${level}`;
-            return brick; // Zwracamy aktualne wymiary cegieł
+            return brick;
         }
         let brick = initializeLevel();
 
+        // Zapisywanie gry
+        function saveGame() {
+            const gameState = {
+                score: score,
+                level: level,
+                balls: balls,
+                paddle: { x: paddle.x },
+                bricks: bricks
+            };
+            localStorage.setItem('beatBallSave', JSON.stringify(gameState));
+            alert('Game Saved!');
+        }
+
+        // Wczytywanie gry
+        function loadGame() {
+            const savedState = localStorage.getItem('beatBallSave');
+            if (savedState) {
+                const gameState = JSON.parse(savedState);
+                score = gameState.score;
+                level = gameState.level;
+                balls = gameState.balls;
+                paddle.x = gameState.paddle.x;
+                bricks = gameState.bricks;
+                brick = initializeLevel(); // Ustawienie wymiarów cegieł
+                scoreElem.textContent = `Score: ${score}`;
+                levelElem.textContent = `Level: ${level}`;
+                alert('Game Loaded!');
+            } else {
+                alert('No saved game found!');
+            }
+        }
+
+        // Nowa gra
+        function newGame() {
+            score = 0;
+            level = 1;
+            balls = [{
+                x: window.innerWidth/2,
+                y: window.innerHeight * 0.8,
+                radius: window.innerWidth * 0.02,
+                dx: 3,
+                dy: -3
+            }];
+            paddle.x = window.innerWidth * 0.4;
+            brick = initializeLevel();
+            scoreElem.textContent = `Score: ${score}`;
+            levelElem.textContent = `Level: ${level}`;
+        }
+
         // Obsługa pauzy
-        pauseBtn.addEventListener('click', () => {
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' || e.key === 'p') togglePause();
+        });
+
+        function togglePause() {
             isPaused = !isPaused;
-            pauseBtn.textContent = isPaused ? 'Resume' : 'Pause';
+            pauseMenu.style.display = isPaused ? 'block' : 'none';
             if (!isPaused && animationFrameId === null) {
                 draw();
             } else if (isPaused) {
                 cancelAnimationFrame(animationFrameId);
                 animationFrameId = null;
             }
+        }
+
+        resumeBtn.addEventListener('click', togglePause);
+        saveBtn.addEventListener('click', saveGame);
+        loadBtn.addEventListener('click', () => {
+            loadGame();
+            togglePause();
+        });
+        newGameBtn.addEventListener('click', () => {
+            newGame();
+            togglePause();
         });
 
         // Obsługa dotyku
