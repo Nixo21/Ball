@@ -140,19 +140,29 @@
         const themeSwitch = document.getElementById('themeSwitch');
 
         // Firebase Config - WSTAW SWOJE DANE Z FIREBASE
-        const firebaseConfig = {
-            apiKey: "twoj-api-key",
-            authDomain: "twoj-projekt.firebaseapp.com",
-            databaseURL: "https://twoj-projekt-default-rtdb.firebaseio.com",
-            projectId: "twoj-projekt",
-            storageBucket: "twoj-projekt.appspot.com",
-            messagingSenderId: "twoj-sender-id",
-            appId: "twoj-app-id"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
+      // Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
 
-        // Ustawienie rozmiaru canvas
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyAfMozialgRIfiRiMz3Z-U3B2ZZf8my2dU",
+  authDomain: "ball-ebd7e.firebaseapp.com",
+  databaseURL: "https://ball-ebd7e-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "ball-ebd7e",
+  storageBucket: "ball-ebd7e.firebasestorage.app",
+  messagingSenderId: "683982019094",
+  appId: "1:683982019094:web:98be071566801a99743337",
+  measurementId: "G-R1PPHXHKFD"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+     // Ustawienie rozmiaru canvas
         function resizeCanvas() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
