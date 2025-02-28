@@ -24,7 +24,7 @@
             border: 2px solid black;
             transition: background 0.3s, border-color 0.3s;
         }
-        #score, #level, #paddleTimer {
+        #score, #level, #paddleTimer, #leaderboardDisplay {
             position: absolute;
             color: white;
             font-family: Arial, sans-serif;
@@ -34,19 +34,16 @@
             background: rgba(0, 0, 0, 0.5);
             transition: color 0.3s, background 0.3s;
         }
-        #score { 
-            top: 1vh;
-            left: 1vw;
-        }
-        #level { 
-            top: 1vh;
-            right: 1vw;
-            transform: translateX(0);
-        }
-        #paddleTimer {
-            top: 6vh;
-            right: 1vw;
-            display: none;
+        #score { top: 1vh; left: 1vw; }
+        #level { top: 1vh; right: 1vw; }
+        #paddleTimer { top: 6vh; right: 1vw; display: none; }
+        #leaderboardDisplay { 
+            bottom: 1vh; 
+            left: 1vw; 
+            width: 30vw; 
+            font-size: 3vw; 
+            max-height: 20vh; 
+            overflow-y: auto; 
         }
         #pauseBtn {
             position: absolute;
@@ -60,9 +57,8 @@
             background: #fff;
             border: 1px solid #000;
             border-radius: 5px;
-            transition: background 0.3s, color 0.3s, border-color 0.3s;
         }
-        #pauseMenu, #codesMenu, #leaderboardMenu {
+        #pauseMenu {
             position: absolute;
             top: 50%;
             left: 50%;
@@ -77,15 +73,13 @@
             width: 80vw;
             max-height: 80vh;
             overflow-y: auto;
-            transition: background 0.3s, color 0.3s;
         }
-        #pauseMenu button, #codesMenu button, #leaderboardMenu button {
+        #pauseMenu button {
             display: block;
             margin: 10px auto;
             padding: 1vh 2vw;
             font-size: 3vw;
             cursor: pointer;
-            transition: background 0.3s, color 0.3s;
         }
         .theme-toggle {
             display: flex;
@@ -94,89 +88,24 @@
             gap: 10px;
             margin: 10px 0;
         }
-        .theme-toggle label {
-            font-size: 3vw;
-        }
-        .theme-toggle input[type="checkbox"] {
-            width: 40px;
-            height: 20px;
-            cursor: pointer;
-        }
-        .code-input {
-            margin: 10px 0;
-        }
-        #codeInput {
-            padding: 1vh 2vw;
-            font-size: 3vw;
-            width: 60%;
-            border-radius: 5px;
-            border: 1px solid #fff;
-        }
-        #codesList div {
-            margin: 10px 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        #codesList button {
-            display: inline-block;
-            margin: 0 5px;
-            padding: 0.5vh 1vw;
-            font-size: 2.5vw;
-        }
-        #leaderboardList {
-            margin: 10px 0;
-            font-size: 3vw;
-        }
-        #leaderboardList div {
-            display: flex;
-            justify-content: space-between;
-            padding: 5px;
-            border-bottom: 1px solid #fff;
-        }
-
-        /* Styl dla ciemnego motywu */
-        body.dark-theme {
-            background: #1a1a1a;
-        }
-        .dark-theme #gameCanvas {
-            background: #2a2a2a;
-            border-color: #fff;
-        }
-        .dark-theme #score,
-        .dark-theme #level,
-        .dark-theme #paddleTimer {
+        .theme-toggle label { font-size: 3vw; }
+        .theme-toggle input[type="checkbox"] { width: 40px; height: 20px; cursor: pointer; }
+        body.dark-theme { background: #1a1a1a; }
+        .dark-theme #gameCanvas { background: #2a2a2a; border-color: #fff; }
+        .dark-theme #score, .dark-theme #level, .dark-theme #paddleTimer, .dark-theme #leaderboardDisplay {
             color: #fff;
             background: rgba(255, 255, 255, 0.2);
         }
-        .dark-theme #pauseBtn {
-            background: #444;
-            color: #fff;
-            border-color: #fff;
-        }
-        .dark-theme #pauseMenu,
-        .dark-theme #codesMenu,
-        .dark-theme #leaderboardMenu {
-            background: rgba(40, 40, 40, 0.9);
-            color: #fff;
-        }
-        .dark-theme #pauseMenu button,
-        .dark-theme #codesMenu button,
-        .dark-theme #leaderboardMenu button {
-            background: #555;
-            color: #fff;
-        }
-        .dark-theme #codeInput {
-            background: #666;
-            color: #fff;
-            border-color: #fff;
-        }
+        .dark-theme #pauseBtn { background: #444; color: #fff; border-color: #fff; }
+        .dark-theme #pauseMenu { background: rgba(40, 40, 40, 0.9); color: #fff; }
+        .dark-theme #pauseMenu button { background: #555; color: #fff; }
     </style>
 </head>
 <body>
     <div id="score">Score: 0</div>
     <div id="level">Level: 1</div>
     <div id="paddleTimer">Paddle: 0s</div>
+    <div id="leaderboardDisplay">Leaderboard:<br>Loading...</div>
     <button id="pauseBtn">Pause</button>
     <div id="pauseMenu">
         <h2>Paused</h2>
@@ -188,24 +117,12 @@
             <label for="themeSwitch">Dark Theme</label>
             <input type="checkbox" id="themeSwitch">
         </div>
-        <div class="code-input">
-            <input type="text" id="codeInput" placeholder="Enter code">
-            <button id="redeemBtn">Redeem</button>
-        </div>
-        <button id="codesBtn">Codes</button>
-        <button id="leaderboardBtn">Leaderboard</button>
-    </div>
-    <div id="codesMenu">
-        <h2>Activated Codes</h2>
-        <div id="codesList"></div>
-        <button id="backBtn">Back</button>
-    </div>
-    <div id="leaderboardMenu">
-        <h2>Leaderboard</h2>
-        <div id="leaderboardList"></div>
-        <button id="leaderboardBackBtn">Back</button>
     </div>
     <canvas id="gameCanvas"></canvas>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js"></script>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
@@ -213,23 +130,27 @@
         const scoreElem = document.getElementById('score');
         const levelElem = document.getElementById('level');
         const paddleTimerElem = document.getElementById('paddleTimer');
+        const leaderboardDisplay = document.getElementById('leaderboardDisplay');
         const pauseBtn = document.getElementById('pauseBtn');
         const pauseMenu = document.getElementById('pauseMenu');
-        const codesMenu = document.getElementById('codesMenu');
-        const leaderboardMenu = document.getElementById('leaderboardMenu');
         const resumeBtn = document.getElementById('resumeBtn');
         const saveBtn = document.getElementById('saveBtn');
         const loadBtn = document.getElementById('loadBtn');
         const newGameBtn = document.getElementById('newGameBtn');
         const themeSwitch = document.getElementById('themeSwitch');
-        const codeInput = document.getElementById('codeInput');
-        const redeemBtn = document.getElementById('redeemBtn');
-        const codesBtn = document.getElementById('codesBtn');
-        const leaderboardBtn = document.getElementById('leaderboardBtn');
-        const codesList = document.getElementById('codesList');
-        const leaderboardList = document.getElementById('leaderboardList');
-        const backBtn = document.getElementById('backBtn');
-        const leaderboardBackBtn = document.getElementById('leaderboardBackBtn');
+
+        // Firebase Config - WSTAW SWOJE DANE Z FIREBASE
+        const firebaseConfig = {
+            apiKey: "twoj-api-key",
+            authDomain: "twoj-projekt.firebaseapp.com",
+            databaseURL: "https://twoj-projekt-default-rtdb.firebaseio.com",
+            projectId: "twoj-projekt",
+            storageBucket: "twoj-projekt.appspot.com",
+            messagingSenderId: "twoj-sender-id",
+            appId: "twoj-app-id"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
 
         // Ustawienie rozmiaru canvas
         function resizeCanvas() {
@@ -247,7 +168,6 @@
             dx: 3,
             dy: -3
         }];
-
         const paddle = {
             width: window.innerWidth * 0.2,
             height: window.innerHeight * 0.02,
@@ -256,7 +176,6 @@
             speed: 7,
             defaultWidth: window.innerWidth * 0.2
         };
-
         const brickBase = {
             width: window.innerWidth * 0.1,
             height: window.innerHeight * 0.03,
@@ -277,26 +196,10 @@
         let animationFrameId = null;
         let paddleTimer = 0;
         let lastTime = performance.now();
-        let isBasketball = false;
-        let activatedCodes = JSON.parse(localStorage.getItem('activatedCodes')) || {};
+        let paddleColor = '#0095DD';
+        let brickColor = '#DD9500';
 
-        // Lista trwałych kodów
-        const persistentCodes = {
-            "ba$ketball": true,
-            "MEGABIGWIN": true
-        };
-
-        // Lista wszystkich kodów
-        const allCodes = {
-            "extraballs": true,
-            "bigpaddle": true,
-            "scoreboost": true,
-            "ba$ketball": true,
-            "MEGABIGWIN": true,
-            "AdMiN": true
-        };
-
-        // Funkcja inicjalizacji poziomu
+        // Inicjalizacja poziomu
         function initializeLevel() {
             bricks = [];
             brickRowCount = 3 + level;
@@ -331,59 +234,33 @@
         }
         let brick = initializeLevel();
 
-        // Zapisywanie i wczytywanie motywu
+        // Motyw
         function loadTheme() {
             const savedTheme = localStorage.getItem('gameTheme');
             if (savedTheme === 'dark') {
                 document.body.classList.add('dark-theme');
                 themeSwitch.checked = true;
+                paddleColor = '#fff';
+                brickColor = '#888';
             }
         }
-
         function toggleTheme() {
             document.body.classList.toggle('dark-theme');
             const isDark = document.body.classList.contains('dark-theme');
             localStorage.setItem('gameTheme', isDark ? 'dark' : 'light');
-            updateGameColors(isDark);
+            paddleColor = isDark ? '#fff' : '#0095DD';
+            brickColor = isDark ? '#888' : '#DD9500';
         }
-
-        // Aktualizacja kolorów gry
-        function updateGameColors(isDark) {
-            if (isDark) {
-                paddleColor = '#fff';
-                brickColor = '#888';
-            } else {
-                paddleColor = '#0095DD';
-                brickColor = '#DD9500';
-            }
-        }
-
-        let paddleColor = '#0095DD';
-        let brickColor = '#DD9500';
-
         loadTheme();
-        updateGameColors(document.body.classList.contains('dark-theme'));
 
-        // Zapisywanie gry
+        // Zapisywanie i wczytywanie gry
         function saveGame() {
-            const gameState = {
-                score: score,
-                level: level,
-                balls: balls,
-                paddle: { x: paddle.x, width: paddle.width },
-                bricks: bricks,
-                paddleTimer: paddleTimer,
-                isBasketball: isBasketball
-            };
+            const gameState = { score, level, balls, paddle: { x: paddle.x, width: paddle.width }, bricks, paddleTimer };
             localStorage.setItem('beatBallSave', JSON.stringify(gameState));
-            localStorage.setItem('activatedCodes', JSON.stringify(activatedCodes));
             alert('Game Saved!');
         }
-
-        // Wczytywanie gry
         function loadGame() {
             const savedState = localStorage.getItem('beatBallSave');
-            const savedCodes = localStorage.getItem('activatedCodes');
             if (savedState) {
                 const gameState = JSON.parse(savedState);
                 score = gameState.score;
@@ -393,207 +270,64 @@
                 paddle.width = gameState.paddle.width;
                 bricks = gameState.bricks;
                 paddleTimer = gameState.paddleTimer;
-                isBasketball = gameState.isBasketball || false;
-                activatedCodes = savedCodes ? JSON.parse(savedCodes) : activatedCodes;
                 brick = initializeLevel();
                 scoreElem.textContent = `Score: ${score}`;
                 levelElem.textContent = `Level: ${level}`;
                 updatePaddleTimerDisplay();
-                updateCodesMenu();
                 alert('Game Loaded!');
             } else {
                 alert('No saved game found!');
             }
         }
-
-        // Nowa gra
         function newGame() {
             score = 0;
-            level = activatedCodes["MEGABIGWIN"] ? 25 : 1;
-            balls = [{
-                x: window.innerWidth/2,
-                y: window.innerHeight * 0.8,
-                radius: window.innerWidth * 0.02,
-                dx: 3,
-                dy: -3
-            }];
+            level = 1;
+            balls = [{ x: window.innerWidth/2, y: window.innerHeight * 0.8, radius: window.innerWidth * 0.02, dx: 3, dy: -3 }];
             paddle.x = window.innerWidth * 0.4;
             paddle.width = paddle.defaultWidth;
             paddleTimer = 0;
-            isBasketball = activatedCodes["ba$ketball"] || false;
             brick = initializeLevel();
             scoreElem.textContent = `Score: ${score}`;
             levelElem.textContent = `Level: ${level}`;
             updatePaddleTimerDisplay();
-            localStorage.setItem('activatedCodes', JSON.stringify(activatedCodes));
         }
 
-        // Obsługa kodów
-        function redeemCode() {
-            const code = codeInput.value.trim();
-            let success = false;
-
-            if (code === "AdMiN") {
-                activatedCodes = { ...allCodes };
-                activatedCodes["AdMiN"] = false;
-                delete activatedCodes["extraballs"];
-                delete activatedCodes["bigpaddle"];
-                delete activatedCodes["scoreboost"];
-                isBasketball = true;
-                level = 25;
-                brick = initializeLevel();
-                levelElem.textContent = `Level: ${level}`;
-                updateCodesMenu();
-                alert("All persistent codes unlocked!");
-                success = true;
-            } else {
-                switch(code) {
-                    case "extraballs":
-                        balls.push({
-                            x: paddle.x + paddle.width/2,
-                            y: paddle.y - 20,
-                            radius: window.innerWidth * 0.02,
-                            dx: 3,
-                            dy: -3
-                        });
-                        alert("Extra ball added!");
-                        break;
-                    case "bigpaddle":
-                        paddle.width = paddle.defaultWidth * 2;
-                        paddleTimer = 30;
-                        updatePaddleTimerDisplay();
-                        alert("Paddle enlarged for 30 seconds!");
-                        break;
-                    case "scoreboost":
-                        score += 100;
-                        scoreElem.textContent = `Score: ${score}`;
-                        alert("Score boosted by 100!");
-                        break;
-                    case "ba$ketball":
-                        activatedCodes["ba$ketball"] = true;
-                        isBasketball = true;
-                        updateCodesMenu();
-                        alert("Basketball mode activated!");
-                        success = true;
-                        break;
-                    case "MEGABIGWIN":
-                        activatedCodes["MEGABIGWIN"] = true;
-                        level = 25;
-                        brick = initializeLevel();
-                        levelElem.textContent = `Level: ${level}`;
-                        updateCodesMenu();
-                        alert("Level set to 25!");
-                        success = true;
-                        break;
-                    default:
-                        alert("Invalid code!");
-                }
-            }
-
-            if (success) {
-                localStorage.setItem('activatedCodes', JSON.stringify(activatedCodes));
-            }
-            codeInput.value = "";
+        // Leaderboard z Firebase
+        async function saveScore(score, username) {
+            const ref = db.ref('leaderboard');
+            await ref.push({ username, score, date: new Date().toISOString() });
         }
 
-        // Tabela wyników z Netlify Functions
-        async function saveScore(score) {
-            try {
-                await fetch('/.netlify/functions/save-score', {
-                    method: 'POST',
-                    body: JSON.stringify({ score })
+        function updateLeaderboardDisplay() {
+            const ref = db.ref('leaderboard');
+            ref
+                .orderByChild('score')
+                .limitToLast(10)
+                .on('value', (snapshot) => {
+                    const leaderboard = [];
+                    snapshot.forEach((child) => {
+                        leaderboard.unshift(child.val());
+                    });
+                    leaderboardDisplay.innerHTML = "Leaderboard:<br>" + 
+                        leaderboard.map((entry, i) => `${i + 1}. ${entry.username}: ${entry.score}`).join('<br>');
+                }, (error) => {
+                    leaderboardDisplay.innerHTML = "Leaderboard:<br>Failed to load";
+                    console.error(error);
                 });
-            } catch (error) {
-                console.error('Error saving score:', error);
-                alert('Failed to save score');
-            }
         }
+        updateLeaderboardDisplay(); // Wywołaj przy starcie
 
-        async function updateLeaderboard() {
-            try {
-                const response = await fetch('/.netlify/functions/save-score', {
-                    method: 'POST',
-                    body: JSON.stringify({ score })
-                });
-                const data = await response.json();
-                leaderboardList.innerHTML = "";
-                data.scores.forEach((entry, index) => {
-                    const div = document.createElement('div');
-                    div.innerHTML = `<span>${index + 1}. Player</span><span>${entry.score}</span>`;
-                    leaderboardList.appendChild(div);
-                });
-                const rankDiv = document.createElement('div');
-                rankDiv.innerHTML = `<span>Your Rank:</span><span>${data.rank}</span>`;
-                leaderboardList.appendChild(rankDiv);
-            } catch (error) {
-                console.error('Error fetching leaderboard:', error);
-                leaderboardList.innerHTML = "Failed to load leaderboard";
-            }
-        }
-
-        // Aktualizacja menu kodów
-        function updateCodesMenu() {
-            codesList.innerHTML = "";
-            for (const code in activatedCodes) {
-                if (code === "AdMiN" || !persistentCodes[code]) continue;
-                const div = document.createElement('div');
-                const label = document.createElement('span');
-                label.textContent = code;
-                const toggleBtn = document.createElement('button');
-                toggleBtn.textContent = activatedCodes[code] ? "Disable" : "Enable";
-                toggleBtn.onclick = () => {
-                    activatedCodes[code] = !activatedCodes[code];
-                    toggleBtn.textContent = activatedCodes[code] ? "Disable" : "Enable";
-                    if (code === "ba$ketball") {
-                        isBasketball = activatedCodes[code];
-                    } else if (code === "MEGABIGWIN" && !activatedCodes[code]) {
-                        level = 1;
-                        brick = initializeLevel();
-                        levelElem.textContent = `Level: ${level}`;
-                    }
-                    localStorage.setItem('activatedCodes', JSON.stringify(activatedCodes));
-                };
-                div.appendChild(label);
-                div.appendChild(toggleBtn);
-                codesList.appendChild(div);
-            }
-        }
-
-        // Przełączanie menu
-        function showCodesMenu() {
-            pauseMenu.style.display = 'none';
-            codesMenu.style.display = 'block';
-            leaderboardMenu.style.display = 'none';
-            updateCodesMenu();
-        }
-
-        function showLeaderboardMenu() {
-            pauseMenu.style.display = 'none';
-            codesMenu.style.display = 'none';
-            leaderboardMenu.style.display = 'block';
-            updateLeaderboard();
-        }
-
-        function showPauseMenu() {
-            codesMenu.style.display = 'none';
-            leaderboardMenu.style.display = 'none';
-            pauseMenu.style.display = 'block';
-        }
-
-        // Obsługa pauzy i zdarzeń
+        // Obsługa pauzy
         pauseBtn.addEventListener('click', togglePause);
+        resumeBtn.addEventListener('click', togglePause);
+        saveBtn.addEventListener('click', saveGame);
+        loadBtn.addEventListener('click', () => { loadGame(); togglePause(); });
+        newGameBtn.addEventListener('click', () => { newGame(); togglePause(); });
         themeSwitch.addEventListener('change', toggleTheme);
-        redeemBtn.addEventListener('click', redeemCode);
-        codesBtn.addEventListener('click', showCodesMenu);
-        leaderboardBtn.addEventListener('click', showLeaderboardMenu);
-        backBtn.addEventListener('click', showPauseMenu);
-        leaderboardBackBtn.addEventListener('click', showPauseMenu);
 
         function togglePause() {
             isPaused = !isPaused;
             pauseMenu.style.display = isPaused ? 'block' : 'none';
-            codesMenu.style.display = 'none';
-            leaderboardMenu.style.display = 'none';
             if (!isPaused && animationFrameId === null) {
                 lastTime = performance.now();
                 draw();
@@ -603,23 +337,11 @@
             }
         }
 
-        resumeBtn.addEventListener('click', togglePause);
-        saveBtn.addEventListener('click', saveGame);
-        loadBtn.addEventListener('click', () => {
-            loadGame();
-            togglePause();
-        });
-        newGameBtn.addEventListener('click', () => {
-            newGame();
-            togglePause();
-        });
-
         // Obsługa dotyku
         canvas.addEventListener('touchstart', (e) => {
             e.preventDefault();
             touchX = e.touches[0].clientX;
         });
-
         canvas.addEventListener('touchmove', (e) => {
             e.preventDefault();
             if(touchX !== null) {
@@ -631,13 +353,12 @@
                 if(paddle.x + paddle.width > canvas.width) paddle.x = canvas.width - paddle.width;
             }
         });
-
         canvas.addEventListener('touchend', (e) => {
             e.preventDefault();
             touchX = null;
         });
 
-        // Aktualizacja timera paletki
+        // Timer paletki
         function updatePaddleTimerDisplay() {
             if (paddleTimer > 0) {
                 paddleTimerElem.style.display = 'block';
@@ -647,96 +368,14 @@
             }
         }
 
-        // Dodawanie nowych piłek i efektów
-        function addExtraBalls(brickX, brickY) {
-            const rand = Math.random();
-            if (rand < 0.015) {
-                for(let i = 0; i < 3; i++) {
-                    balls.push({
-                        x: brickX + brick.width/2,
-                        y: brickY + brick.height,
-                        radius: window.innerWidth * 0.02,
-                        dx: (Math.random() - 0.5) * 6 * (1 + level * 0.1),
-                        dy: 3 * (1 + level * 0.1)
-                    });
-                }
-            } else if (rand < 0.02) {
-                const currentBalls = [...balls];
-                currentBalls.forEach(ball => {
-                    balls.push({
-                        x: ball.x,
-                        y: ball.y,
-                        radius: ball.radius,
-                        dx: ball.dx * -1,
-                        dy: ball.dy
-                    });
-                });
-            } else if (rand < 0.025) {
-                paddle.width = paddle.defaultWidth * 1.5;
-                paddleTimer = 10 + Math.random() * 10;
-                updatePaddleTimerDisplay();
-            }
-        }
-
-        // Poprawiona detekcja kolizji
-        function collisionDetection() {
-            let bricksLeft = 0;
-            for(let c = 0; c < brickColumnCount; c++) {
-                for(let r = 0; r < brickRowCount; r++) {
-                    const b = bricks[c][r];
-                    if(b.status === 1) {
-                        bricksLeft++;
-                        balls.forEach(ball => {
-                            const closestX = Math.max(b.x, Math.min(ball.x, b.x + brick.width));
-                            const closestY = Math.max(b.y, Math.min(ball.y, b.y + brick.height));
-                            const distanceX = ball.x - closestX;
-                            const distanceY = ball.y - closestY;
-                            const distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
-
-                            if(distance < ball.radius) {
-                                const dx = ball.x - (b.x + brick.width/2);
-                                const dy = ball.y - (b.y + brick.height/2);
-                                if(Math.abs(dx) > Math.abs(dy)) {
-                                    ball.dx = -ball.dx;
-                                } else {
-                                    ball.dy = -ball.dy;
-                                }
-                                b.status = 0;
-                                score += 10;
-                                scoreElem.textContent = `Score: ${score}`;
-                                addExtraBalls(b.x, b.y);
-                            }
-                        });
-                    }
-                }
-            }
-            if(bricksLeft === 0) {
-                level++;
-                brick = initializeLevel();
-            }
-        }
-
-        // Rysowanie piłki
+        // Rysowanie
         function drawBall(ball) {
             ctx.beginPath();
-            if (isBasketball) {
-                ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI*2);
-                ctx.fillStyle = '#f28c38';
-                ctx.fill();
-                ctx.strokeStyle = '#000';
-                ctx.lineWidth = 2;
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.arc(ball.x, ball.y, ball.radius * 0.8, 0, Math.PI*2);
-                ctx.stroke();
-            } else {
-                ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI*2);
-                ctx.fillStyle = document.body.classList.contains('dark-theme') ? '#ccc' : '#0095DD';
-                ctx.fill();
-            }
+            ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI*2);
+            ctx.fillStyle = document.body.classList.contains('dark-theme') ? '#ccc' : '#0095DD';
+            ctx.fill();
             ctx.closePath();
         }
-
         function drawPaddle() {
             ctx.beginPath();
             ctx.rect(paddle.x, paddle.y, paddle.width, paddle.height);
@@ -744,7 +383,6 @@
             ctx.fill();
             ctx.closePath();
         }
-
         function drawBricks() {
             for(let c = 0; c < brickColumnCount; c++) {
                 for(let r = 0; r < brickRowCount; r++) {
@@ -760,6 +398,37 @@
                         ctx.closePath();
                     }
                 }
+            }
+        }
+        function collisionDetection() {
+            let bricksLeft = 0;
+            for(let c = 0; c < brickColumnCount; c++) {
+                for(let r = 0; r < brickRowCount; r++) {
+                    const b = bricks[c][r];
+                    if(b.status === 1) {
+                        bricksLeft++;
+                        balls.forEach(ball => {
+                            const closestX = Math.max(b.x, Math.min(ball.x, b.x + brick.width));
+                            const closestY = Math.max(b.y, Math.min(ball.y, b.y + brick.height));
+                            const distanceX = ball.x - closestX;
+                            const distanceY = ball.y - closestY;
+                            const distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
+                            if(distance < ball.radius) {
+                                const dx = ball.x - (b.x + brick.width/2);
+                                const dy = ball.y - (b.y + brick.height/2);
+                                if(Math.abs(dx) > Math.abs(dy)) ball.dx = -ball.dx;
+                                else ball.dy = -ball.dy;
+                                b.status = 0;
+                                score += 10;
+                                scoreElem.textContent = `Score: ${score}`;
+                            }
+                        });
+                    }
+                }
+            }
+            if(bricksLeft === 0) {
+                level++;
+                brick = initializeLevel();
             }
         }
 
@@ -797,36 +466,39 @@
                    ball.y + ball.dy < paddle.y + paddle.height + ball.radius && 
                    ball.x > paddle.x - ball.radius && 
                    ball.x < paddle.x + paddle.width + ball.radius) {
-                    if(ball.y <= paddle.y) {
-                        ball.dy = -Math.abs(ball.dy);
+                    if(ball.y <= paddle.y || (ball.y > paddle.y && ball.dy > 0)) {
+                        const hitPoint = (ball.x - (paddle.x + paddle.width/2)) / (paddle.width/2);
+                        const maxAngle = Math.PI / 3;
+                        const baseSpeed = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy);
+                        ball.dx = baseSpeed * Math.sin(hitPoint * maxAngle);
+                        ball.dy = -baseSpeed * Math.cos(hitPoint * maxAngle);
                     }
                 }
                 if(ball.y > paddle.y + paddle.height + ball.radius) {
                     return false;
                 }
-
                 ball.x += ball.dx;
                 ball.y += ball.dy;
                 return true;
             });
 
             if(balls.length === 0) {
-                const save = confirm(`Game Over! Score: ${score}\nDo you want to save your score?`);
-                if (save) saveScore(score);
-                document.location.reload();
+                const username = prompt("Game Over! Enter your name:") || "Anonymous";
+                saveScore(score, username);
+                setTimeout(() => document.location.reload(), 1000);
             }
 
             animationFrameId = requestAnimationFrame(draw);
         }
 
-        // Uruchomienie gry
+        // Start gry
         try {
             lastTime = performance.now();
             draw();
         } catch(error) {
-            console.error('Błąd gry:', error);
-            alert('Wystąpił błąd przy uruchamianiu gry');
+            console.error('Game error:', error);
+            alert('Error starting game');
         }
     </script>
 </body>
-</html> 
+</html>
