@@ -1,507 +1,112 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Beat Ball Mobile Levels</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background: #333;
-            overflow: hidden;
-            touch-action: none;
-            transition: background 0.3s;
-        }
-        #gameCanvas {
-            background: #f0f0f0;
-            border: 2px solid black;
-            transition: background 0.3s, border-color 0.3s;
-        }
-        #score, #level, #paddleTimer, #leaderboardDisplay {
-            position: absolute;
-            color: white;
-            font-family: Arial, sans-serif;
-            font-size: 4vw;
-            z-index: 10;
-            padding: 2px 5px;
-            background: rgba(0, 0, 0, 0.5);
-            transition: color 0.3s, background 0.3s;
-        }
-        #score { top: 1vh; left: 1vw; }
-        #level { top: 1vh; right: 1vw; }
-        #paddleTimer { top: 6vh; right: 1vw; display: none; }
-        #leaderboardDisplay { 
-            bottom: 1vh; 
-            left: 1vw; 
-            width: 30vw; 
-            font-size: 3vw; 
-            max-height: 20vh; 
-            overflow-y: auto; 
-        }
-        #pauseBtn {
-            position: absolute;
-            top: 1vh;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 1vh 2vw;
-            font-size: 3vw;
-            cursor: pointer;
-            z-index: 10;
-            background: #fff;
-            border: 1px solid #000;
-            border-radius: 5px;
-        }
-        #pauseMenu {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.8);
-            padding: 20px;
-            border-radius: 10px;
-            display: none;
-            z-index: 20;
-            color: white;
-            text-align: center;
-            width: 80vw;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-        #pauseMenu button {
-            display: block;
-            margin: 10px auto;
-            padding: 1vh 2vw;
-            font-size: 3vw;
-            cursor: pointer;
-        }
-        .theme-toggle {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            margin: 10px 0;
-        }
-        .theme-toggle label { font-size: 3vw; }
-        .theme-toggle input[type="checkbox"] { width: 40px; height: 20px; cursor: pointer; }
-        body.dark-theme { background: #1a1a1a; }
-        .dark-theme #gameCanvas { background: #2a2a2a; border-color: #fff; }
-        .dark-theme #score, .dark-theme #level, .dark-theme #paddleTimer, .dark-theme #leaderboardDisplay {
-            color: #fff;
-            background: rgba(255, 255, 255, 0.2);
-        }
-        .dark-theme #pauseBtn { background: #444; color: #fff; border-color: #fff; }
-        .dark-theme #pauseMenu { background: rgba(40, 40, 40, 0.9); color: #fff; }
-        .dark-theme #pauseMenu button { background: #555; color: #fff; }
-    </style>
-</head>
-<body>
-    <div id="score">Score: 0</div>
-    <div id="level">Level: 1</div>
-    <div id="paddleTimer">Paddle: 0s</div>
-    <div id="leaderboardDisplay">Leaderboard:<br>Loading...</div>
-    <button id="pauseBtn">Pause</button>
-    <div id="pauseMenu">
-        <h2>Paused</h2>
-        <button id="resumeBtn">Resume</button>
-        <button id="saveBtn">Save Game</button>
-        <button id="loadBtn">Load Game</button>
-        <button id="newGameBtn">New Game</button>
-        <div class="theme-toggle">
-            <label for="themeSwitch">Dark Theme</label>
-            <input type="checkbox" id="themeSwitch">
-        </div>
-    </div>
-    <canvas id="gameCanvas"></canvas>
+import React, { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { motion } from "framer-motion";
 
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js"></script>
+const POLISH_WORDS = [
+  "komputer", "pies", "wakacje", "samochód", "szkoła",
+  "czekolada", "programowanie", "książka", "telefon", "muzyka",
+  "przyjaciel", "historia", "miłość", "rower", "kawa",
+];
 
-    <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        const scoreElem = document.getElementById('score');
-        const levelElem = document.getElementById('level');
-        const paddleTimerElem = document.getElementById('paddleTimer');
-        const leaderboardDisplay = document.getElementById('leaderboardDisplay');
-        const pauseBtn = document.getElementById('pauseBtn');
-        const pauseMenu = document.getElementById('pauseMenu');
-        const resumeBtn = document.getElementById('resumeBtn');
-        const saveBtn = document.getElementById('saveBtn');
-        const loadBtn = document.getElementById('loadBtn');
-        const newGameBtn = document.getElementById('newGameBtn');
-        const themeSwitch = document.getElementById('themeSwitch');
+const ALPHABET = "aąbcćdeęfghijklłmnńoópqrsśtuvwxyzźż".split("");
 
-        // Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyAfMozialgRIfiRiMz3Z-U3B2ZZf8my2dU",
-  authDomain: "ball-ebd7e.firebaseapp.com",
-  databaseURL: "https://ball-ebd7e-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "ball-ebd7e",
-  storageBucket: "ball-ebd7e.firebasestorage.app",
-  messagingSenderId: "683982019094",
-  appId: "1:683982019094:web:98be071566801a99743337",
-  measurementId: "G-R1PPHXHKFD"
+const getRandomWord = () => {
+  const word = POLISH_WORDS[Math.floor(Math.random() * POLISH_WORDS.length)];
+  return word.toLowerCase();
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
-     // Ustawienie rozmiaru canvas
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        }
-        resizeCanvas();
-        window.addEventListener('resize', resizeCanvas);
+const HangmanDrawing = ({ wrongGuesses }: { wrongGuesses: number }) => {
+  return (
+    <svg height="250" width="200" className="mx-auto mt-4">
+      {/* Szubienica */}
+      <line x1="10" y1="240" x2="190" y2="240" stroke="black" strokeWidth="4" />
+      <line x1="50" y1="240" x2="50" y2="20" stroke="black" strokeWidth="4" />
+      <line x1="50" y1="20" x2="130" y2="20" stroke="black" strokeWidth="4" />
+      <line x1="130" y1="20" x2="130" y2="50" stroke="black" strokeWidth="4" />
 
-        // Początkowe ustawienia gry
-        let balls = [{
-            x: window.innerWidth/2,
-            y: window.innerHeight * 0.8,
-            radius: window.innerWidth * 0.02,
-            dx: 3,
-            dy: -3
-        }];
-        const paddle = {
-            width: window.innerWidth * 0.2,
-            height: window.innerHeight * 0.02,
-            x: (window.innerWidth * 0.4),
-            y: window.innerHeight * 0.9,
-            speed: 7,
-            defaultWidth: window.innerWidth * 0.2
-        };
-        const brickBase = {
-            width: window.innerWidth * 0.1,
-            height: window.innerHeight * 0.03,
-            padding: window.innerWidth * 0.01,
-            offsetTop: window.innerHeight * 0.07,
-            offsetLeft: 0
-        };
+      {/* Części ciała */}
+      {wrongGuesses > 0 && <circle cx="130" cy="70" r="20" stroke="black" strokeWidth="4" fill="none" />} {/* Głowa */}
+      {wrongGuesses > 1 && <line x1="130" y1="90" x2="130" y2="150" stroke="black" strokeWidth="4" />} {/* Tułów */}
+      {wrongGuesses > 2 && <line x1="130" y1="110" x2="100" y2="130" stroke="black" strokeWidth="4" />} {/* Lewa ręka */}
+      {wrongGuesses > 3 && <line x1="130" y1="110" x2="160" y2="130" stroke="black" strokeWidth="4" />} {/* Prawa ręka */}
+      {wrongGuesses > 4 && <line x1="130" y1="150" x2="110" y2="190" stroke="black" strokeWidth="4" />} {/* Lewa noga */}
+      {wrongGuesses > 5 && <line x1="130" y1="150" x2="150" y2="190" stroke="black" strokeWidth="4" />} {/* Prawa noga */}
+    </svg>
+  );
+};
 
-        // Zmienne gry
-        let score = 0;
-        let level = 1;
-        let touchX = null;
-        let brickRowCount = 3;
-        let brickColumnCount = 0;
-        let bricks = [];
-        let totalBricks = 0;
-        let isPaused = false;
-        let animationFrameId = null;
-        let paddleTimer = 0;
-        let lastTime = performance.now();
-        let paddleColor = '#0095DD';
-        let brickColor = '#DD9500';
+export default function HangmanGame() {
+  const [word, setWord] = useState(getRandomWord);
+  const [guessedLetters, setGuessedLetters] = useState<string[]>([]);
+  const [wrongGuesses, setWrongGuesses] = useState(0);
+  const maxWrong = 6;
 
-        // Inicjalizacja poziomu
-        function initializeLevel() {
-            bricks = [];
-            brickRowCount = 3 + level;
-            const scaleFactor = Math.max(0.5, 1 - (level * 0.03));
-            const brick = {
-                width: brickBase.width * scaleFactor,
-                height: brickBase.height * scaleFactor,
-                padding: brickBase.padding,
-                offsetTop: brickBase.offsetTop,
-                offsetLeft: 0
-            };
-            brickColumnCount = Math.floor(window.innerWidth / (brick.width + brick.padding));
-            const totalBricksWidth = brickColumnCount * (brick.width + brick.padding) - brick.padding;
-            brick.offsetLeft = (window.innerWidth - totalBricksWidth) / 2;
+  const maskedWord = word
+    .split("")
+    .map((letter) => (guessedLetters.includes(letter) ? letter : "_"))
+    .join(" ");
 
-            balls.forEach(ball => {
-                ball.dx *= 1.1;
-                ball.dy *= 1.1;
-                ball.x = window.innerWidth/2;
-                ball.y = window.innerHeight * 0.8;
-            });
+  const handleGuess = (guess: string) => {
+    if (!guessedLetters.includes(guess)) {
+      setGuessedLetters((prev) => [...prev, guess]);
+      if (!word.includes(guess)) {
+        setWrongGuesses((prev) => prev + 1);
+      }
+    }
+  };
 
-            for(let c = 0; c < brickColumnCount; c++) {
-                bricks[c] = [];
-                for(let r = 0; r < brickRowCount; r++) {
-                    bricks[c][r] = { x: 0, y: 0, status: 1 };
-                }
-            }
-            totalBricks = brickRowCount * brickColumnCount;
-            levelElem.textContent = `Level: ${level}`;
-            return brick;
-        }
-        let brick = initializeLevel();
+  const isWin = word.split("").every((letter) => guessedLetters.includes(letter));
+  const isLose = wrongGuesses >= maxWrong;
 
-        // Motyw
-        function loadTheme() {
-            const savedTheme = localStorage.getItem('gameTheme');
-            if (savedTheme === 'dark') {
-                document.body.classList.add('dark-theme');
-                themeSwitch.checked = true;
-                paddleColor = '#fff';
-                brickColor = '#888';
-            }
-        }
-        function toggleTheme() {
-            document.body.classList.toggle('dark-theme');
-            const isDark = document.body.classList.contains('dark-theme');
-            localStorage.setItem('gameTheme', isDark ? 'dark' : 'light');
-            paddleColor = isDark ? '#fff' : '#0095DD';
-            brickColor = isDark ? '#888' : '#DD9500';
-        }
-        loadTheme();
+  const resetGame = () => {
+    setWord(getRandomWord());
+    setGuessedLetters([]);
+    setWrongGuesses(0);
+  };
 
-        // Zapisywanie i wczytywanie gry
-        function saveGame() {
-            const gameState = { score, level, balls, paddle: { x: paddle.x, width: paddle.width }, bricks, paddleTimer };
-            localStorage.setItem('beatBallSave', JSON.stringify(gameState));
-            alert('Game Saved!');
-        }
-        function loadGame() {
-            const savedState = localStorage.getItem('beatBallSave');
-            if (savedState) {
-                const gameState = JSON.parse(savedState);
-                score = gameState.score;
-                level = gameState.level;
-                balls = gameState.balls;
-                paddle.x = gameState.paddle.x;
-                paddle.width = gameState.paddle.width;
-                bricks = gameState.bricks;
-                paddleTimer = gameState.paddleTimer;
-                brick = initializeLevel();
-                scoreElem.textContent = `Score: ${score}`;
-                levelElem.textContent = `Level: ${level}`;
-                updatePaddleTimerDisplay();
-                alert('Game Loaded!');
-            } else {
-                alert('No saved game found!');
-            }
-        }
-        function newGame() {
-            score = 0;
-            level = 1;
-            balls = [{ x: window.innerWidth/2, y: window.innerHeight * 0.8, radius: window.innerWidth * 0.02, dx: 3, dy: -3 }];
-            paddle.x = window.innerWidth * 0.4;
-            paddle.width = paddle.defaultWidth;
-            paddleTimer = 0;
-            brick = initializeLevel();
-            scoreElem.textContent = `Score: ${score}`;
-            levelElem.textContent = `Level: ${level}`;
-            updatePaddleTimerDisplay();
-        }
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-purple-200 to-blue-300 flex flex-col items-center justify-center p-4">
+      <Card className="max-w-md w-full shadow-2xl rounded-2xl">
+        <CardContent className="flex flex-col gap-4 p-6">
+          <h1 className="text-3xl font-bold text-center">Wisielec</h1>
 
-        // Leaderboard z Firebase
-        async function saveScore(score, username) {
-            const ref = db.ref('leaderboard');
-            await ref.push({ username, score, date: new Date().toISOString() });
-        }
+          <HangmanDrawing wrongGuesses={wrongGuesses} />
 
-        function updateLeaderboardDisplay() {
-            const ref = db.ref('leaderboard');
-            ref
-                .orderByChild('score')
-                .limitToLast(10)
-                .on('value', (snapshot) => {
-                    const leaderboard = [];
-                    snapshot.forEach((child) => {
-                        leaderboard.unshift(child.val());
-                    });
-                    leaderboardDisplay.innerHTML = "Leaderboard:<br>" + 
-                        leaderboard.map((entry, i) => `${i + 1}. ${entry.username}: ${entry.score}`).join('<br>');
-                }, (error) => {
-                    leaderboardDisplay.innerHTML = "Leaderboard:<br>Failed to load";
-                    console.error(error);
-                });
-        }
-        updateLeaderboardDisplay(); // Wywołaj przy starcie
+          <motion.div
+            className="text-center text-2xl tracking-widest font-mono"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+          >
+            {maskedWord}
+          </motion.div>
 
-        // Obsługa pauzy
-        pauseBtn.addEventListener('click', togglePause);
-        resumeBtn.addEventListener('click', togglePause);
-        saveBtn.addEventListener('click', saveGame);
-        loadBtn.addEventListener('click', () => { loadGame(); togglePause(); });
-        newGameBtn.addEventListener('click', () => { newGame(); togglePause(); });
-        themeSwitch.addEventListener('change', toggleTheme);
+          <div className="grid grid-cols-7 gap-1 mt-4">
+            {ALPHABET.map((letter) => (
+              <Button
+                key={letter}
+                variant={guessedLetters.includes(letter) ? "outline" : "default"}
+                disabled={guessedLetters.includes(letter) || isWin || isLose}
+                onClick={() => handleGuess(letter)}
+                className="text-sm p-1"
+              >
+                {letter}
+              </Button>
+            ))}
+          </div>
 
-        function togglePause() {
-            isPaused = !isPaused;
-            pauseMenu.style.display = isPaused ? 'block' : 'none';
-            if (!isPaused && animationFrameId === null) {
-                lastTime = performance.now();
-                draw();
-            } else if (isPaused) {
-                cancelAnimationFrame(animationFrameId);
-                animationFrameId = null;
-            }
-        }
+          <p className="text-center mt-2">Niepoprawne próby: {wrongGuesses} / {maxWrong}</p>
 
-        // Obsługa dotyku
-        canvas.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            touchX = e.touches[0].clientX;
-        });
-        canvas.addEventListener('touchmove', (e) => {
-            e.preventDefault();
-            if(touchX !== null) {
-                const newX = e.touches[0].clientX;
-                const diff = newX - touchX;
-                paddle.x += diff;
-                touchX = newX;
-                if(paddle.x < 0) paddle.x = 0;
-                if(paddle.x + paddle.width > canvas.width) paddle.x = canvas.width - paddle.width;
-            }
-        });
-        canvas.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            touchX = null;
-        });
-
-        // Timer paletki
-        function updatePaddleTimerDisplay() {
-            if (paddleTimer > 0) {
-                paddleTimerElem.style.display = 'block';
-                paddleTimerElem.textContent = `Paddle: ${Math.ceil(paddleTimer)}s`;
-            } else {
-                paddleTimerElem.style.display = 'none';
-            }
-        }
-
-        // Rysowanie
-        function drawBall(ball) {
-            ctx.beginPath();
-            ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI*2);
-            ctx.fillStyle = document.body.classList.contains('dark-theme') ? '#ccc' : '#0095DD';
-            ctx.fill();
-            ctx.closePath();
-        }
-        function drawPaddle() {
-            ctx.beginPath();
-            ctx.rect(paddle.x, paddle.y, paddle.width, paddle.height);
-            ctx.fillStyle = paddleColor;
-            ctx.fill();
-            ctx.closePath();
-        }
-        function drawBricks() {
-            for(let c = 0; c < brickColumnCount; c++) {
-                for(let r = 0; r < brickRowCount; r++) {
-                    if(bricks[c][r].status === 1) {
-                        const brickX = c * (brick.width + brick.padding) + brick.offsetLeft;
-                        const brickY = r * (brick.height + brick.padding) + brick.offsetTop;
-                        bricks[c][r].x = brickX;
-                        bricks[c][r].y = brickY;
-                        ctx.beginPath();
-                        ctx.rect(brickX, brickY, brick.width, brick.height);
-                        ctx.fillStyle = brickColor;
-                        ctx.fill();
-                        ctx.closePath();
-                    }
-                }
-            }
-        }
-        function collisionDetection() {
-            let bricksLeft = 0;
-            for(let c = 0; c < brickColumnCount; c++) {
-                for(let r = 0; r < brickRowCount; r++) {
-                    const b = bricks[c][r];
-                    if(b.status === 1) {
-                        bricksLeft++;
-                        balls.forEach(ball => {
-                            const closestX = Math.max(b.x, Math.min(ball.x, b.x + brick.width));
-                            const closestY = Math.max(b.y, Math.min(ball.y, b.y + brick.height));
-                            const distanceX = ball.x - closestX;
-                            const distanceY = ball.y - closestY;
-                            const distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
-                            if(distance < ball.radius) {
-                                const dx = ball.x - (b.x + brick.width/2);
-                                const dy = ball.y - (b.y + brick.height/2);
-                                if(Math.abs(dx) > Math.abs(dy)) ball.dx = -ball.dx;
-                                else ball.dy = -ball.dy;
-                                b.status = 0;
-                                score += 10;
-                                scoreElem.textContent = `Score: ${score}`;
-                            }
-                        });
-                    }
-                }
-            }
-            if(bricksLeft === 0) {
-                level++;
-                brick = initializeLevel();
-            }
-        }
-
-        // Główna pętla gry
-        function draw() {
-            if (isPaused) return;
-
-            const currentTime = performance.now();
-            const deltaTime = (currentTime - lastTime) / 1000;
-            lastTime = currentTime;
-
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            drawBricks();
-            balls.forEach(drawBall);
-            drawPaddle();
-            collisionDetection();
-
-            if (paddleTimer > 0) {
-                paddleTimer -= deltaTime;
-                if (paddleTimer <= 0) {
-                    paddleTimer = 0;
-                    paddle.width = paddle.defaultWidth;
-                }
-                updatePaddleTimerDisplay();
-            }
-
-            balls = balls.filter(ball => {
-                if(ball.x + ball.dx > canvas.width - ball.radius || ball.x + ball.dx < ball.radius) {
-                    ball.dx = -ball.dx;
-                }
-                if(ball.y + ball.dy < ball.radius) {
-                    ball.dy = -ball.dy;
-                }
-                if(ball.y + ball.dy > paddle.y - ball.radius && 
-                   ball.y + ball.dy < paddle.y + paddle.height + ball.radius && 
-                   ball.x > paddle.x - ball.radius && 
-                   ball.x < paddle.x + paddle.width + ball.radius) {
-                    if(ball.y <= paddle.y || (ball.y > paddle.y && ball.dy > 0)) {
-                        const hitPoint = (ball.x - (paddle.x + paddle.width/2)) / (paddle.width/2);
-                        const maxAngle = Math.PI / 3;
-                        const baseSpeed = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy);
-                        ball.dx = baseSpeed * Math.sin(hitPoint * maxAngle);
-                        ball.dy = -baseSpeed * Math.cos(hitPoint * maxAngle);
-                    }
-                }
-                if(ball.y > paddle.y + paddle.height + ball.radius) {
-                    return false;
-                }
-                ball.x += ball.dx;
-                ball.y += ball.dy;
-                return true;
-            });
-
-            if(balls.length === 0) {
-                const username = prompt("Game Over! Enter your name:") || "Anonymous";
-                saveScore(score, username);
-                setTimeout(() => document.location.reload(), 1000);
-            }
-
-            animationFrameId = requestAnimationFrame(draw);
-        }
-
-        // Start gry
-        try {
-            lastTime = performance.now();
-            draw();
-        } catch(error) {
-            console.error('Game error:', error);
-            alert('Error starting game');
-        }
-    </script>
-</body>
-</html>
+          {(isWin || isLose) && (
+            <div className="text-center mt-4">
+              <p className="text-xl font-semibold">
+                {isWin ? "🎉 Brawo! Odgadłeś hasło!" : `😢 Przegrałeś! Hasło to: ${word}`}
+              </p>
+              <Button className="mt-2" onClick={resetGame}>Zagraj ponownie</Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
